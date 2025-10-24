@@ -67,7 +67,9 @@ namespace TommyDat{
             return Matrix(rawResult,n,m);
         }
         Matrix convolution(const Matrix& kernel,int stride = 1) {
-
+            if (kernel.n % 2 || kernel.m % 2) {
+                throw std::runtime_error("* Cannot process kernel dimemsion % 2 == 1");
+            }
             auto result =  CallGPUConvolution(flattenArray,n,m,kernel.getFlattenMatrix(),kernel.n,kernel.m,stride,stride);
             return Matrix(result.newRawMatrix,result.N,result.M);
         }
