@@ -79,7 +79,7 @@ T* CallMatrixMul(T *A,T *B,int HangA,int CotA,int CotB) {
     cudaMemcpy(d_b,B,sizeof(T) * CotB * CotA,cudaMemcpyHostToDevice);
     dim3 block(32, 32);
     dim3 grid( (CotB + 31) / 32, (HangA + 31) / 32 ); // round-up division
-    matrixMulTile<<< grid, block >>>(d_a, d_b, d_outp,HangA, CotA, CotB);
+    matrixMulTile<<<grid,block>>>(d_a, d_b, d_outp,HangA, CotA, CotB);
 
     // kiểm tra lỗi kernel và đồng bộ
     CUDA_CHECK(cudaGetLastError()); // catch launch error
