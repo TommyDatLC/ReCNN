@@ -6,9 +6,9 @@ using namespace std;
 using namespace TommyDat;
 
 int main() {
-    Matrix a = Matrix(3,3,6.0f);
-    Matrix b = Matrix(3,3,2.0f);
-    a.set(1,1,23.0f);
-    Matrix d =  a - b;
-    cout << d;
+    Matrix a = Matrix(14,14 ,2.0f);
+    Matrix kernel = Matrix(3,3,1.f);
+    //kernel.set(1,1,4);
+
+    cout  << a.convolution(kernel) << kernel;
 }

@@ -10,6 +10,7 @@
 #include "../Utils/GPUMatrixOp.h"
 #include "../Utils/GPUmax.h"
 #include "../Utils/GPUSoftMax.h"
+#include "../Utils/Sum.h"
 
 namespace TommyDat{
     template <typename T>
@@ -56,21 +57,23 @@ namespace TommyDat{
         dim3 GetDim() {
             return dim3(n,m,0);
         }
+
         Matrix softMax() {
             T* rawResult = new T[lenFlattenCache];
 
             memcpy(rawResult,matrixFlatten,sizeof(T) * lenFlattenCache);
             T maxElm = CallGPUmax(rawResult,lenFlattenCache);
-            T sum = CallSum(rawResult,lenFlattenCache);
+            T sum = CallGPUSum(rawResult,lenFlattenCache);
             CallGPUExpMinusMax(rawResult,lenFlattenCache,maxElm);
             CallGPUSoftmax(rawResult,lenFlattenCache,sum);
             return Matrix(rawResult,n,m);
         }
-        Matrix convolution(const Matrix& kernel,int stride = 1) {
-            if (kernel.n % 2 || kernel.m % 2) {
-                throw std::runtime_error("* Cannot process kernel dimemsion % 2 == 1");
+        Matrix convolution(Matrix& kernel,int stride = 1) {
+            if (kernel.n % 2 == 0 || kernel.m % 2 == 0) {
+                throw std::runtime_error("* Cannot process kernel dimemsion % 2 != 1");
             }
-            auto result =  CallGPUConvolution(flattenArray,n,m,kernel.getFlattenMatrix(),kernel.n,kernel.m,stride,stride);
+            T* Bflatten = kernel.getFlattenMatrix();
+            ConvolotionOutput<T> result =  CallGPUConvolution(matrixFlatten,n,m,Bflatten,kernel.n,kernel.m,stride,stride);
             return Matrix(result.newRawMatrix,result.N,result.M);
         }
         Matrix operator*(const Matrix& B) {

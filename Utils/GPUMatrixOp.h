@@ -4,6 +4,7 @@
 
 #ifndef RECNN_GPUMATRIXMUL_H
 #define RECNN_GPUMATRIXMUL_H
+#include "Sum.h"
 #include "Utility.cuh"
 
 template <typename T>
@@ -122,23 +123,22 @@ T* CallMatrixAddOrSub(T* A,T *B,int Hang,int Cot,bool isAdd) {
 }
 // assume that kernel is small
 template <typename T>
-__global__ void GPUConvolution(T* A,T* output,int N,int M,T* kernel,int kn,int km,int strideX,int strideY) {
+__global__ void GPUConvolution(T* A,T* output,int N,int M,T* kernel,int kn,int km,int strideX,int strideY,T sumOfKernel) {
     // Kernel always small so no need to use tile and share memory
     T value = 0;
     int idx = blockDim.x * blockIdx.x + threadIdx.x;
     int idy = blockDim.y * blockIdx.y + threadIdx.y;
-
-
     for (int i = 0;i < kn;i++)
         for (int j = 0;j < km;j++)
         {
-            int idxWoffset  = (idx * strideX - kn / 2);
-            int idyWOffset = (idy * strideY - km / 2);
-            if (idxWoffset < 0 || idyWOffset < 0 || idxWoffset > N || idyWOffset > M)
+            int idxWoffset  = (idx * strideX - kn / 2) + i;
+            int idyWOffset = (idy * strideY - km / 2) + j;
+            if (idxWoffset < 0 || idyWOffset < 0 || idxWoffset >= N || idyWOffset >= M)
                 continue;
-            value += kernel[i * km + j] * A[(idxWoffset) * M + (idyWOffset)];
+            value += kernel[i * km + j] * A[(idxWoffset ) * M + (idyWOffset )] ;
         }
-    output[idx * M + idy] = value;
+    if (idx * M + idy < M * N)
+    output[idx * M + idy] = value / sumOfKernel;
 }
 template <typename T>
 struct ConvolotionOutput {
@@ -147,7 +147,7 @@ struct ConvolotionOutput {
 };
 template <typename T>
 ConvolotionOutput<T> CallGPUConvolution(T* A,int N,int M,T* kernel,int kn,int km,int strideX = 1,int strideY = 1) {
-
+    T sumOfKernel = CPUsum(kernel,kn * km);
     int outputN = (N  + strideX - 1) / strideX;
     int outputM = (M  + strideY - 1) / strideY;
 
@@ -158,15 +158,14 @@ ConvolotionOutput<T> CallGPUConvolution(T* A,int N,int M,T* kernel,int kn,int km
 
 
     cudaMalloc(&d_output,sizeof(T) * outputN * outputM);
-    cudaMemcpy(d_output,A,allocSize,cudaMemcpyHostToDevice);
+    cudaMemcpy(d_output,A,sizeof(T) * outputN * outputM,cudaMemcpyHostToDevice);
 
     cudaMalloc(&d_kernel,sizeof(T) * kn * km);
     cudaMemcpy(d_kernel,kernel,sizeof(T) * kn * km,cudaMemcpyHostToDevice);
 
     dim3 blocks((N + 31) / 32,(M + 31) / 32);
     dim3 threads(32,32);
-    GPUConvolution<<<blocks,threads>>>(d_A,d_output,N,M,d_kernel,kn,km,strideX,strideY);
-
+    GPUConvolution<<<blocks,threads>>>(d_A,d_output,N,M,d_kernel,kn,km,strideX,strideY,sumOfKernel);
     cudaMemcpy(h_output,d_output,sizeof(T) * outputN * outputM,cudaMemcpyDeviceToHost);
     cudaFree(d_A);
     cudaFree(d_kernel);
