@@ -5,42 +5,54 @@
 #ifndef RECNN_UTILITY_CUH
 #define RECNN_UTILITY_CUH
 
+
 const int DEFAULT_KERNEL_SIZE = 1024;
 
+#define CUDA_CHECK(call) do { \
+    cudaError_t e = (call); \
+    if (e != cudaSuccess) { \
+        std::cerr << "CUDA error " << __FILE__ << ":" << __LINE__ << " -> " \
+        << cudaGetErrorString(e) << " (" << e << ")\n"; \
+        std::exit(EXIT_FAILURE); \
+    } \
+} while(0)
 __device__ int getID() {
     auto idx = threadIdx.x + blockDim.x * blockIdx.x;
     return idx;
 }
 
-void CaculateBlockAndThreadNumber(int lengthArr,int& block ,int& thread) {
-    thread = lengthArr < DEFAULT_KERNEL_SIZE ? lengthArr : DEFAULT_KERNEL_SIZE;
+void CaculateBlockAndThreadNumber(int lengthArr,int& block ,int& thread,int numthread = 0) {
+    if (!numthread)
+        numthread = DEFAULT_KERNEL_SIZE;
+    thread = lengthArr < numthread ? lengthArr : numthread;
     block =  (lengthArr + thread - 1) / thread;
 }
-__global__ void reduce_sum(float *input,float *output) {
-    __shared__ float sdata[1024];
+template <typename T>
+__global__ void GPUreduce_sum(T *input,T *output) {
+    __shared__ T sdata[1024];
     int id = getID();
     int threadID = threadIdx.x;
 
     // copy input len shared memory
     sdata[id] = input[id];
     __syncthreads();
-
     for (int s = blockDim.x / 2; s > 0; s >>= 1) {
         if (threadID < s) sdata[id] += sdata[id + s]; // Neu thread id nam trong khoang [0 ,s -1]
         // đồng bộ thread trong cùng 1 block
         __syncthreads();
-
     }
     // Sử dụng mỗi thread 0 để gán tổng cho 1 cụm
     if (threadID == 0) output[blockIdx.x] = sdata[0];
 }
-float GPUSum(float *input,int length)
+
+template <typename T>
+T CallSum(T *input,int length)
 {
 
-    float *d_input,*d_output;
+    T *d_input,*d_output;
     int outputLength = length;
-    cudaMallocManaged(&d_input,sizeof(float) * length);
-    cudaMallocManaged(&d_output,sizeof(float) * length);
+    cudaMallocManaged(&d_input,sizeof(T) * length);
+    cudaMallocManaged(&d_output,sizeof(T) * length);
     // copy to device
     for (int i = 0;i < length;i++) {
         d_input[i] = input[i];
@@ -48,24 +60,18 @@ float GPUSum(float *input,int length)
     int blocks = length,thread = 0;
     while (outputLength > 1) {
         CaculateBlockAndThreadNumber(length,blocks,thread);
-        reduce_sum<<< blocks , thread>>>(d_input,d_output);
+        GPUreduce_sum<<< blocks , thread>>>(d_input,d_output);
         outputLength = blocks;
         cudaDeviceSynchronize();
-        std::cout << d_output[0] << '\n';
     }
-
+    return d_output[0];
 
 }
-
-__global__ void ExpSum(float* arr,int count,float* res) {
-    int idx = getID();
-    if (idx >= count)
-    {
-        return;
-    }
-  //  atomicAdd(res + )
+template <typename T>
+void freeArr(T* arr) {
+    if (arr != nullptr)
+        delete[] arr;
 }
-
 
 
 

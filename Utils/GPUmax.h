@@ -6,9 +6,8 @@
 #define RECNN_GPUMAX_H
 #include "Utility.cuh"
 
-
-
-__global__ void device_max(float* inputArr,float* blockOutputArr) {
+template <typename T>
+__global__ void GPUmax(T* inputArr,T* blockOutputArr) {
     __shared__ float shareMem[1024];
     int id = getID();
     int tid = threadIdx.x;
@@ -23,17 +22,16 @@ __global__ void device_max(float* inputArr,float* blockOutputArr) {
     }
     if (tid == 0) blockOutputArr[blockIdx.x] = shareMem[0];
 }
-
-int GPUmax(float* input,float length) {
-    float* d_input,*d_output;
-    cudaMallocManaged(&d_input,sizeof(float) * length);
-    cudaMallocManaged(&d_output,sizeof(float) * length);
+template <typename T>
+int CallGPUmax(T* input,int length) {
+    T* d_input,*d_output;
+    cudaMallocManaged(&d_input,sizeof(T) * length);
+    cudaMallocManaged(&d_output,sizeof(T) * length);
     int block ,thread;
-    cudaMemcpy(d_input,input,sizeof(float) * length,cudaMemcpyHostToDevice);
-
+    cudaMemcpy(d_input,input,sizeof(T) * length,cudaMemcpyHostToDevice);
     while (length > 1) {
         CaculateBlockAndThreadNumber(length,block,thread);
-        device_max<<<block,thread>>>(d_input,d_output);
+        GPUmax<<<block,thread>>>(d_input,d_output);
         length = block;
         cudaDeviceSynchronize();
     }

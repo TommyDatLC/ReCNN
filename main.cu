@@ -1,15 +1,14 @@
 #include <iostream>
 
-#include "Utils/GPUmax.h"
-#include "Utils/GPUPrefixSum.h"
-#include "Utils/Utility.cuh"
+
+#include "Component/TommyDatMatrix.h"
 using namespace std;
+using namespace TommyDat;
+
 int main() {
-    float a[6] = {1,2,3,4,5,6};
-    int lenA = sizeof(a) / sizeof(float);
-    // cout << GPUmax(a,lenA);
-    CallPrefixSum(a,lenA);
-    for (int i = 0;i < lenA;i++) {
-        cout << a[i] << ' ';
-    }
+    Matrix a = Matrix(3,3,6.0f);
+    Matrix b = Matrix(3,3,2.0f);
+    a.set(1,1,23.0f);
+    Matrix d =  a - b;
+    cout << d;
 }

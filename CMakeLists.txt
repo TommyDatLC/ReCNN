@@ -10,6 +10,9 @@ add_executable(ReCNN
         main.cu
         Utils/GPUmax.h
         Utils/GPUPrefixSum.h
+        Utils/GPUMatrixOp.h
+        Component/TommyDatMatrix.h
+        Utils/GPUSoftMax.h
 )
 
 set_target_properties(ReCNN PROPERTIES

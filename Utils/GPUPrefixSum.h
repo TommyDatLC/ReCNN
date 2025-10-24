@@ -50,6 +50,7 @@ void CallPrefixSum(float *input,int len) {
     PrefixSum<<<numBlock,numThread>>>(d_input,len);
     cudaMemcpy(input,d_input,sizeof(float) * len,cudaMemcpyDeviceToHost);
     cudaDeviceSynchronize();
+
 }
 #endif //RECNN_GPUPREFIXSUM_H
 
