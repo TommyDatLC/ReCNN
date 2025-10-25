@@ -46,6 +46,7 @@ T CallGPUSum(T *input,int length)
     return d_output[0];
 
 }
+
 template <typename T>
 T CPUsum(T* arr,int len) {
     T res = 0;

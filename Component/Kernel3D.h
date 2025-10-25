@@ -99,6 +99,7 @@ namespace TommyDat {
                     delete data[i];
                 }
             }
+            delete[] data;
         }
         T* flatten() override {
             if (data == nullptr || size <= 0)
@@ -123,10 +124,9 @@ namespace TommyDat {
         }
         void heInit() {
             for (int i = 0; i < size; ++i)
-                delete data[i];
-            delete[] data;
+                data[i]->heInit();
         }
-        friend std::ostream& operator<<(ostream& os,Kernel3D B) {
+        friend std::ostream& operator<<(std::ostream& os,const Kernel3D& B) {
             for (int i = 0;i < B.size;i++)
                 os << "matrix:" << i << '\n' << *B.data[i] << '\n';
             return os;
