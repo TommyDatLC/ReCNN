@@ -87,8 +87,6 @@ namespace TommyDat {
                 data[ch] = new Matrix<T>(flat, height, width);
             }
         }
-
-
         // trả về số channel
         dim3 getDim() const {
             return dim3(size,n,m);
