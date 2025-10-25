@@ -16,7 +16,7 @@ __global__ void GPUreduce_sum(T *input,T *output) {
     sdata[id] = input[id];
     __syncthreads();
     for (int s = blockDim.x / 2; s > 0; s >>= 1) {
-        if (threadID < s) sdata[id] += sdata[id + s]; // Neu thread id nam trong khoang [0 ,s -1]
+        if (threadID < s) sdata[id] += sdata[id + s]; // Neu thread id nam trong khoang [0 ,s - 1]
         // đồng bộ thread trong cùng 1 block
         __syncthreads();
     }

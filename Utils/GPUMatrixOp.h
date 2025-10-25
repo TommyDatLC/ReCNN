@@ -96,6 +96,7 @@ __global__ void MatrixAddOrSub(T *A,T *B,T *C,int Hang,int Cot,bool isAdd) {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockDim.y * blockIdx.y + threadIdx.y;
     int thisIdx = x * Cot + y;
+
     if (isAdd)
         C[thisIdx] = A[thisIdx] + B[thisIdx];
     else
@@ -135,10 +136,11 @@ __global__ void GPUConvolution(T* A,T* output,int N,int M,T* kernel,int kn,int k
             int idyWOffset = (idy * strideY - km / 2) + j;
             if (idxWoffset < 0 || idyWOffset < 0 || idxWoffset >= N || idyWOffset >= M)
                 continue;
-            value += kernel[i * km + j] * A[(idxWoffset ) * M + (idyWOffset )] ;
+            value += kernel[i * km + j] * A[(idxWoffset) * M + (idyWOffset )] ;
         }
-    if (idx * M + idy < M * N)
-    output[idx * M + idy] = value / sumOfKernel;
+    if (idx  <  N && idy < M) {
+        output[idx * M + idy] = value / sumOfKernel;
+    }
 }
 template <typename T>
 struct ConvolotionOutput {
@@ -166,10 +168,53 @@ ConvolotionOutput<T> CallGPUConvolution(T* A,int N,int M,T* kernel,int kn,int km
     dim3 blocks((N + 31) / 32,(M + 31) / 32);
     dim3 threads(32,32);
     GPUConvolution<<<blocks,threads>>>(d_A,d_output,N,M,d_kernel,kn,km,strideX,strideY,sumOfKernel);
+
     cudaMemcpy(h_output,d_output,sizeof(T) * outputN * outputM,cudaMemcpyDeviceToHost);
     cudaFree(d_A);
     cudaFree(d_kernel);
     return { h_output,outputN,outputM };
+}
+template <typename T>
+__global__ void GPURelu(T *A,int n) {
+    int id = getID();
+    if (A[id] < 0 && id < n)
+        A[id] = 0;
+}
+template <typename T>
+void CallGPURelu(T *A,int n) {
+    T* d_a;
+    cudaMalloc(&d_a,sizeof(T) * n);
+    cudaMemcpy(d_a,A,sizeof(T) * n,cudaMemcpyHostToDevice);
+
+    int blocks,threads;
+    CaculateBlockAndThreadNumber(n,blocks,threads);
+    GPURelu<<<blocks,threads>>>(d_a,n);
+    cudaMemcpy(A,d_a,sizeof(T) * n,cudaMemcpyDeviceToHost);
+    cudaFree(d_a);
+}
+#include <curand_kernel.h>
+__global__ void GPUheInit(float* A,int n,int in,ull seed) {
+    int id = getID();
+    if (id >=  n)
+        return;
+    curandState state;
+    curand_init(seed,id,0,&state);
+    float randn = curand_normal(&state);
+
+    float stddev = sqrtf(2.f/ in);
+    A[id] = randn * stddev;
+}
+void CallGPUheInit(float* A,int n,int in,ull seed) {
+    float* d_a;
+    cudaMalloc(&d_a,sizeof(float) * n);
+    cudaMemcpy(d_a,A,sizeof(float) * n,cudaMemcpyHostToDevice);
+
+    int blocks,threads;
+    CaculateBlockAndThreadNumber(n,blocks,threads);
+
+    GPUheInit<<<blocks,threads>>>(d_a,n,in,seed);
+    cudaMemcpy(A,d_a,sizeof(float) * n,cudaMemcpyDeviceToHost);
+    cudaFree(d_a);
 }
 
 #endif //RECNN_GPUMATRIXMUL_H

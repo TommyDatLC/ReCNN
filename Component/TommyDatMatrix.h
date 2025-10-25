@@ -7,6 +7,8 @@
 #include <stdexcept>
 #include <version>
 #include <cstring>
+
+#include "IFlattenable.h"
 #include "../Utils/GPUMatrixOp.h"
 #include "../Utils/GPUmax.h"
 #include "../Utils/GPUSoftMax.h"
@@ -14,15 +16,21 @@
 
 namespace TommyDat{
     template <typename T>
-    class Matrix {
+    class Matrix : IFlattenable<T>
+    {
     public:
+
+        Matrix(int N,int M) {
+            SetDim(N,M);
+            matrixFlatten = new T[N * M];
+            raw2DmatrixCache = construct2Dfromflat(matrixFlatten,n,m);
+        }
         Matrix(int N,int M,T val) {
             SetDim(N,M);
             matrixFlatten = new T[N * M];
             for (int i = 0;i < N;i++)
                 for (int j = 0;j < M;j++)
                     matrixFlatten[i * M + j] = val;
-
             raw2DmatrixCache = construct2Dfromflat(matrixFlatten,n,m);
         }
         Matrix(T* flattenArr,int N,int M) {
@@ -35,7 +43,7 @@ namespace TommyDat{
             raw2DmatrixCache = raw2Dmatrix;
             matrixFlatten = flattenArray(raw2Dmatrix);
         }
-        T* getFlattenMatrix() {
+        T* flatten() override {
             return matrixFlatten;
         }
         T** get2Dmatrix() {
@@ -60,7 +68,6 @@ namespace TommyDat{
 
         Matrix softMax() {
             T* rawResult = new T[lenFlattenCache];
-
             memcpy(rawResult,matrixFlatten,sizeof(T) * lenFlattenCache);
             T maxElm = CallGPUmax(rawResult,lenFlattenCache);
             T sum = CallGPUSum(rawResult,lenFlattenCache);
@@ -72,7 +79,7 @@ namespace TommyDat{
             if (kernel.n % 2 == 0 || kernel.m % 2 == 0) {
                 throw std::runtime_error("* Cannot process kernel dimemsion % 2 != 1");
             }
-            T* Bflatten = kernel.getFlattenMatrix();
+            T* Bflatten = kernel.flatten();
             ConvolotionOutput<T> result =  CallGPUConvolution(matrixFlatten,n,m,Bflatten,kernel.n,kernel.m,stride,stride);
             return Matrix(result.newRawMatrix,result.N,result.M);
         }
@@ -115,6 +122,15 @@ namespace TommyDat{
                freeArr(raw2DmatrixCache[i]);
             freeArr(raw2DmatrixCache);
         }
+        void ReLU() {
+            CallGPURelu(matrixFlatten,n * m);
+        }
+        void heInit(int LayerSize,ull seed = 123) {
+            CallGPUheInit(matrixFlatten,lenFlattenCache,LayerSize,seed);
+        }
+        void heInit(ull seed = 123) {
+            CallGPUheInit(matrixFlatten,lenFlattenCache,lenFlattenCache,seed);
+        }
     private:
         T* matrixFlatten;
         T** raw2DmatrixCache;
@@ -131,6 +147,7 @@ namespace TommyDat{
         }
 
     };
+
 
 }
 #endif //RECNN_TOMMYDATMATRIX_H

@@ -4,11 +4,12 @@
 #include "Component/TommyDatMatrix.h"
 using namespace std;
 using namespace TommyDat;
-
+#include "Component/Kernel3D.h"
 int main() {
-    Matrix a = Matrix(14,14 ,2.0f);
-    Matrix kernel = Matrix(3,3,1.f);
+    Matrix a = Matrix(10,10 ,2.0f);
+    Matrix b = Matrix(10,10 ,2.0f);
+    b.set(3,4,-14);
     //kernel.set(1,1,4);
-
-    cout  << a.convolution(kernel) << kernel;
+    Kernel3D<float> test("/home/datdau/Pictures/Screenshots/Screenshot From 2025-09-30 10-26-59.png");
+    cout  << test;
 }

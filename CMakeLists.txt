@@ -14,7 +14,12 @@ add_executable(ReCNN
         Component/TommyDatMatrix.h
         Utils/GPUSoftMax.h
         Utils/Sum.h
+        Component/IFlattenable.h
+        Component/Kernel3D.h
+        Component/EnumActivation.h
 )
-
+include_directories(${OpenCV_INCLUDE_DIRS})
+find_package(OpenCV REQUIRED)
 set_target_properties(ReCNN PROPERTIES
         CUDA_SEPARABLE_COMPILATION ON)
+target_link_libraries(ReCNN ${OpenCV_LIBS})
