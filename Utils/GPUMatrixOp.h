@@ -4,6 +4,7 @@
 
 #ifndef RECNN_GPUMATRIXMUL_H
 #define RECNN_GPUMATRIXMUL_H
+#include "GPUmax.h"
 #include "Sum.h"
 #include "Utility.cuh"
 
@@ -143,12 +144,12 @@ __global__ void GPUConvolution(T* A,T* output,int N,int M,T* kernel,int kn,int k
     }
 }
 template <typename T>
-struct ConvolotionOutput {
+struct RawMatrixOutput {
     T* newRawMatrix;
     int N,M;
 };
 template <typename T>
-ConvolotionOutput<T> CallGPUConvolution(T* A,int N,int M,T* kernel,int kn,int km,int strideX = 1,int strideY = 1) {
+RawMatrixOutput<T> CallGPUConvolution(T* A,int N,int M,T* kernel,int kn,int km,int strideX = 1,int strideY = 1) {
     T sumOfKernel = CPUsum(kernel,kn * km);
     int outputN = (N  + strideX - 1) / strideX;
     int outputM = (M  + strideY - 1) / strideY;
@@ -215,6 +216,60 @@ void CallGPUheInit(float* A,int n,int in,ull seed) {
     GPUheInit<<<blocks,threads>>>(d_a,n,in,seed);
     cudaMemcpy(A,d_a,sizeof(float) * n,cudaMemcpyDeviceToHost);
     cudaFree(d_a);
+}
+template <typename T>
+__global__ void GPUmaxPooling(T* inputFlatten,T* output,int n,int m,int outN,int outM,int size,int stride) {
+    // sync for value into share mem
+    int idx = threadIdx.x + blockDim.x  * blockIdx.x;
+    int idy = threadIdx.y + blockDim.y * blockIdx.y;
+    if (idx >= outN || idy >= outM) return;
+
+    int idxOffsetStride = idx * stride;
+    int idyOffsetStride = idy * stride;
+
+    T max = -3e19;
+
+    for (int i = 0;i < size;++i) {
+        int idxCheck = idxOffsetStride + i;
+
+        if (idxCheck >= n)
+            break;
+
+        for (int j = 0;j < size;++j) {
+            int idyCheck = idyOffsetStride + j;
+
+            if (idyCheck >= m)
+                break;
+
+            T check = inputFlatten[idxCheck * m + idyCheck];
+            if (check > max) {
+                max = check;
+            }
+        }
+    }
+
+        output[idx * outM + idy] = max;
+}
+template <typename T>
+RawMatrixOutput<T> CallGPUmaxPooling(T* A,int n,int m,int size,int stride) {
+    T* d_A;
+    cudaMalloc(&d_A,sizeof(T) * n * m);
+    cudaMemcpy(d_A,A,sizeof(T) * n * m,cudaMemcpyHostToDevice);
+
+    dim3 blocks((n + 31) / 32,(m + 31) / 32);
+    dim3 threads(32,32);
+
+    int outN = (n + stride - 1) / stride;
+    int outM = (m + stride - 1) / stride;
+    T* h_output = new T[outN  * outM],*d_output;
+    cudaMalloc(&d_output,sizeof(T) *  outN * outM);
+
+    GPUmaxPooling<<<blocks,threads>>>(d_A,d_output,n,m,outN,outM,size,stride);
+    cudaMemcpy(h_output,d_output,sizeof(T) * outN * outM,cudaMemcpyDeviceToHost);
+    cudaFree(d_A);
+    cudaFree(d_output);
+
+    return { h_output , outN, outM };
 }
 
 #endif //RECNN_GPUMATRIXMUL_H
