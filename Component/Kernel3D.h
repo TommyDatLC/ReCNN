@@ -8,7 +8,7 @@
 #include <string>
 #include <stdexcept>
 #include <opencv2/opencv.hpp> // cần cài OpenCV và link khi build
-#include "TommyDatMatrix.h"
+#include "Matrix.h"
 
 namespace TommyDat {
 
@@ -16,8 +16,24 @@ namespace TommyDat {
     class Kernel3D : IFlattenable<T> {
     public:
         // data sẽ chứa 'size' Matrix<T>, mỗi Matrix là một channel (rows = height, cols = width)
+        // 1 mảng con trỏ matrix<T>
         Matrix<T>** data;
+        Kernel3D(Matrix<T>** DATA,int SIZE,int N,int M) {
+            data = DATA;
+            this->size = SIZE;
+            this->n = N;
+            this->m = M;
+        }
+        Kernel3D(const Kernel3D& B) {
+            size = B.size;
+            m = B.m;
+            n = B.n;
 
+            Matrix<T>** copyDataFromB = new Matrix<T>*[size];
+            for (int i =0 ;i < size;i++) {
+                copyDataFromB[i] = new Matrix<T>(*B.data[i]);
+            }
+        }
         // constructor tạo kernel rỗng (size channel)
         Kernel3D(int SIZE,int N,int M,bool heInit = true) {
             this->size = SIZE;
@@ -106,7 +122,7 @@ namespace TommyDat {
                 throw std::runtime_error("Kernel3D is empty or uninitialized");
 
             // Giả định tất cả channel có cùng kích thước
-            dim3 dim = data[0]->GetDim();
+            dim3 dim = data[0]->getDim();
             int rows = dim.x;
             int cols = dim.y;
             int channelSize = rows * cols;
@@ -126,6 +142,7 @@ namespace TommyDat {
             for (int i = 0; i < size; ++i)
                 data[i]->heInit();
         }
+
         friend std::ostream& operator<<(std::ostream& os,const Kernel3D& B) {
             for (int i = 0;i < B.size;i++)
                 os << "matrix:" << i << '\n' << *B.data[i] << '\n';

@@ -5,7 +5,6 @@
 #ifndef RECNN_TOMMYDATMATRIX_H
 #define RECNN_TOMMYDATMATRIX_H
 #include <stdexcept>
-#include <version>
 #include <cstring>
 
 #include "IFlattenable.h"
@@ -19,7 +18,11 @@ namespace TommyDat{
     class Matrix : IFlattenable<T>
     {
     public:
-
+        Matrix(Matrix& B) {
+            SetDim(B.n,B.m);
+            matrixFlatten = new T[n * m];
+            memcpy(matrixFlatten,B.flatten(),sizeof(n * m));
+        }
         Matrix(int N,int M) {
             SetDim(N,M);
             matrixFlatten = new T[N * M];
@@ -62,7 +65,7 @@ namespace TommyDat{
             checkValidID(x,y);
             return matrixFlatten[x * m + y];
         }
-        dim3 GetDim() {
+        dim3 getDim() {
             return dim3(n,m,0);
         }
 
@@ -80,7 +83,11 @@ namespace TommyDat{
                 throw std::runtime_error("* Cannot process kernel dimemsion % 2 != 1");
             }
             T* Bflatten = kernel.flatten();
-            ConvolotionOutput<T> result =  CallGPUConvolution(matrixFlatten,n,m,Bflatten,kernel.n,kernel.m,stride,stride);
+            auto result =  CallGPUConvolution(matrixFlatten,n,m,Bflatten,kernel.n,kernel.m,stride,stride);
+            return Matrix(result.newRawMatrix,result.N,result.M);
+        }
+        Matrix maxPooling(int size,int stride) {
+            auto result =  CallGPUmaxPooling(matrixFlatten,n,m,size,stride);
             return Matrix(result.newRawMatrix,result.N,result.M);
         }
         Matrix operator*(const Matrix& B) {
