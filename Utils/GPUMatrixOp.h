@@ -271,5 +271,25 @@ RawMatrixOutput<T> CallGPUmaxPooling(T* A,int n,int m,int size,int stride) {
 
     return { h_output , outN, outM };
 }
+template <typename T>
+ __global__ void GPUnormalize(T* input,int n,int maxNumber = 255) {
 
+    int id = getID();
+    if (id >= n)
+        return;
+    input[id] /= maxNumber;
+}
+template <typename T>
+void CallGPUnormalize(T* input,int n, int maxNumber = 255) {
+    T* d_input;
+    cudaMalloc(&d_input,sizeof(T) * n);
+    cudaMemcpy(d_input,input,sizeof(T) * n,cudaMemcpyHostToDevice);
+
+    int blocks,threads;
+    CaculateBlockAndThreadNumber(n,blocks,threads);
+    GPUnormalize<<<blocks,threads>>>(input,n,maxNumber);
+    cudaMemcpy(input,d_input,sizeof(T) * n,cudaMemcpyDeviceToHost);
+
+    cudaFree(d_input);
+}
 #endif //RECNN_GPUMATRIXMUL_H

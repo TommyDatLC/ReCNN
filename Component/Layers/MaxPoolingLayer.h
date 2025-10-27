@@ -7,7 +7,7 @@
 #include "LayerBase.h"
 #include "../Kernel3D.h"
 namespace TommyDat {
-    class MaxPoolingLayer : Layer {
+    class MaxPoolingLayer : public Layer {
     public:
         int stride;
         int size;
@@ -16,21 +16,27 @@ namespace TommyDat {
             this->size = size;
         }
         void inference(void *ptr_lastLayerInput) override {
+
             Kernel3D<float>* inputMatrix = static_cast<Kernel3D<float>*>(ptr_lastLayerInput);
             dim3 inputMatrixDim = inputMatrix->getDim();
+            ptr_listOutputMatrix = new Matrix<float> *[inputMatrixDim.x];
             for (int i = 0;i < inputMatrixDim.x;i++) {
-                Matrix output = new Matrix(inputMatrix->data[i]->maxPooling(size,stride));
+                Matrix poolingResult = inputMatrix->data[i]->maxPooling(size,stride);
+                Matrix<float>* output = new Matrix(poolingResult);
                 ptr_listOutputMatrix[i] = output;
             }
 
-            Kernel3D outputMatrix(ptr_listOutputMatrix,outChannel,inputMatrixDim.x,inputMatrixDim.y);
+            Kernel3D outputMatrix(ptr_listOutputMatrix,inputMatrixDim.x ,inputMatrixDim.y,inputMatrixDim.z);
 
             if (nextLayer != nullptr)
                 nextLayer->inference(&outputMatrix);
+
         }
         void backward(void *nextLayerInput) override {
 
         }
+    private:
+        Matrix<float>** ptr_listOutputMatrix;
     };
 }
 #endif //RECNN_MAXPOOLINGLAYER_H

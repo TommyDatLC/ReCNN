@@ -37,4 +37,5 @@ int CallGPUmax(T* input,int length) {
     }
     return d_output[0];
 }
+
 #endif //RECNN_GPUMAX_H

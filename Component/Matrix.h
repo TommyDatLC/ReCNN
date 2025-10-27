@@ -22,11 +22,12 @@ namespace TommyDat{
             SetDim(B.n,B.m);
             matrixFlatten = new T[n * m];
             memcpy(matrixFlatten,B.flatten(),sizeof(n * m));
+
         }
         Matrix(int N,int M) {
             SetDim(N,M);
             matrixFlatten = new T[N * M];
-            raw2DmatrixCache = construct2Dfromflat(matrixFlatten,n,m);
+
         }
         Matrix(int N,int M,T val) {
             SetDim(N,M);
@@ -34,31 +35,27 @@ namespace TommyDat{
             for (int i = 0;i < N;i++)
                 for (int j = 0;j < M;j++)
                     matrixFlatten[i * M + j] = val;
-            raw2DmatrixCache = construct2Dfromflat(matrixFlatten,n,m);
+
         }
         Matrix(T* flattenArr,int N,int M) {
             SetDim(N,M);
             matrixFlatten = flattenArr;
-            raw2DmatrixCache = construct2Dfromflat(matrixFlatten,n,m);
+
         }
         Matrix(T** raw2Dmatrix,int N,int M) {
             SetDim(N,M);
-            raw2DmatrixCache = raw2Dmatrix;
+
             matrixFlatten = flattenArray(raw2Dmatrix);
         }
         T* flatten() override {
             return matrixFlatten;
         }
-        T** get2Dmatrix() {
-            if (raw2DmatrixCache == nullptr)
-                raw2DmatrixCache = construct2Dfromflat(matrixFlatten,n,m);
-            return raw2DmatrixCache;
-        }
+
 
         void set(uint x,uint y,T val) {
             checkValidID(x,y);
             matrixFlatten[x * m + y] = val;
-            raw2DmatrixCache[x][y] = val;
+
         }
 
         T get(uint x,uint y) {
@@ -125,9 +122,7 @@ namespace TommyDat{
             // when the matrix is free;
 
             freeArr(matrixFlatten);
-            for (int i = 0;i < n;i++)
-               freeArr(raw2DmatrixCache[i]);
-            freeArr(raw2DmatrixCache);
+
         }
         void ReLU() {
             CallGPURelu(matrixFlatten,n * m);
@@ -138,9 +133,12 @@ namespace TommyDat{
         void heInit(ull seed = 123) {
             CallGPUheInit(matrixFlatten,lenFlattenCache,lenFlattenCache,seed);
         }
+        void normalize(int maxNumber = 255) {
+            CallGPUnormalize(matrixFlatten,maxNumber);
+        }
     private:
         T* matrixFlatten;
-        T** raw2DmatrixCache;
+
         int n,m;
         int lenFlattenCache = 0;
         void checkValidID(uint x,uint y) {

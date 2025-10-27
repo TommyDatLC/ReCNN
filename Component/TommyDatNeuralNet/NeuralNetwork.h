@@ -18,7 +18,7 @@ namespace TommyDat {
         int getSize() {
             return layers.size();
         }
-        void Add(Layer* layer) {
+        void add(Layer* layer) {
             int n = layers.size();
             if ( n > 0) {
                 layer->setLastLayer(layers[n - 1]);
@@ -26,11 +26,11 @@ namespace TommyDat {
             }
             layers.push_back(layer);
         }
-        void Predict(TDataInput input) {
+        void predict(TDataInput input) {
             CheckLayersValid();
-            layers[0]->inference(input.data);
+            layers[0]->inference( static_cast<void*>( input.data));
         }
-        void Backward() {
+        void backward() {
             CheckLayersValid();
 
         }

@@ -11,7 +11,7 @@ namespace TommyDat {
         void setLastLayer(Layer* lastLayer) {
             this->lastLayer = lastLayer;
         }
-        void setNextLayer(Layer* lastLayer) {
+        void setNextLayer(Layer* nextLayer) {
             this->nextLayer = nextLayer;
         }
         //,Layer* nextLayer

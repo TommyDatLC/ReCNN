@@ -13,7 +13,7 @@ namespace TommyDat {
         int kernelSize;
         int stride;
         Kernel3D<float>* kernelList;
-        Matrix<float>** ptr_listOutputMatrix = new Matrix<float>*[outChannel];
+        Matrix<float>** ptr_listOutputMatrix ;
     // Convolution sum to nextLayer
     public:
         ConvolutionLayer(int inChannel,int outChannel,int kernelSize,int stride) {
@@ -21,6 +21,7 @@ namespace TommyDat {
             this->outChannel = outChannel;
             this->kernelSize = kernelSize;
             this->stride = stride;
+            ptr_listOutputMatrix = new Matrix<float>*[outChannel];
             if (outChannel % inChannel != 0) {
                 throw std::runtime_error("outChannel must be a mutiple with inChannel");
             }
@@ -32,6 +33,7 @@ namespace TommyDat {
 
             for (int i = 0;i < outChannel;i++) {
                 int idInputMatrix = i % inChannel;
+                std::cout << (inputMatrix->data[idInputMatrix]->flatten() == nullptr);
                 Matrix output = inputMatrix->data[idInputMatrix]->convolution(*kernelList->data[i]);
                 ptr_listOutputMatrix[i] = &output;
             }

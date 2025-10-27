@@ -112,7 +112,9 @@ namespace TommyDat {
             // xóa mảng Matrix (Matrix destructor sẽ giải phóng memory bên trong)
             if (data) {
                 for (int i =0 ;i < size;i++) {
+                    std::cout << data[i] << std::endl;
                     delete data[i];
+
                 }
             }
             delete[] data;
