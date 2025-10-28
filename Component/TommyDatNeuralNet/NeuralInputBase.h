@@ -8,7 +8,7 @@ namespace TommyDat {
     template <typename Tdata>
     class NeuralInputBase {
     public:
-        Tdata data;
+        Tdata* data;
         int lable;
     };
 }

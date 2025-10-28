@@ -6,8 +6,10 @@
 #define RECNN_TOMMYDATMATRIX_H
 #include <stdexcept>
 #include <cstring>
+#include <string>
+#include <vector>
+#include <opencv2/opencv.hpp>   // <-- thêm include OpenCV
 
-#include "IFlattenable.h"
 #include "../Utils/GPUMatrixOp.h"
 #include "../Utils/GPUmax.h"
 #include "../Utils/GPUSoftMax.h"
@@ -15,58 +17,108 @@
 
 namespace TommyDat{
     template <typename T>
-    class Matrix : IFlattenable<T>
+    class Matrix
     {
     public:
+        // copy constructor (sửa memcpy)
         Matrix(Matrix& B) {
-            SetDim(B.n,B.m);
-            matrixFlatten = new T[n * m];
-            memcpy(matrixFlatten,B.flatten(),sizeof(n * m));
+            SetDim(B.size3D,B.n,B.m);
+            matrixFlatten = new T[n * m * size3D];
+            memcpy(matrixFlatten, B.flatten(), sizeof(T) * size3D * n * m);
         }
-        Matrix(int N,int M) {
-            SetDim(N,M);
-            matrixFlatten = new T[N * M];
-            raw2DmatrixCache = construct2Dfromflat(matrixFlatten,n,m);
+
+        Matrix(int size3D,int N,int M,bool heInitRandom = true) {
+            SetDim(size3D,N,M);
+            matrixFlatten = new T[size3D * N * M];
+            if (heInitRandom)
+                heInit();
         }
-        Matrix(int N,int M,T val) {
-            SetDim(N,M);
-            matrixFlatten = new T[N * M];
-            for (int i = 0;i < N;i++)
-                for (int j = 0;j < M;j++)
-                    matrixFlatten[i * M + j] = val;
-            raw2DmatrixCache = construct2Dfromflat(matrixFlatten,n,m);
+        Matrix(int size3D,int N,int M,T val) {
+            SetDim(size3D,N,M);
+            matrixFlatten = new T[N * M * size3D];
+            for (int s = 0;s < size3D;s++)
+                for (int i = 0;i < N;i++)
+                    for (int j = 0;j < M;j++)
+                        matrixFlatten[s * N * M + i * M + j] = val;
         }
-        Matrix(T* flattenArr,int N,int M) {
-            SetDim(N,M);
+        Matrix(T* flattenArr,int size3D,int N,int M) {
+            SetDim(size3D,N,M);
             matrixFlatten = flattenArr;
-            raw2DmatrixCache = construct2Dfromflat(matrixFlatten,n,m);
         }
-        Matrix(T** raw2Dmatrix,int N,int M) {
-            SetDim(N,M);
-            raw2DmatrixCache = raw2Dmatrix;
-            matrixFlatten = flattenArray(raw2Dmatrix);
+        Matrix(T*** raw3Dmatrix,int size3D,int N,int M) {
+            SetDim(size3D,N,M);
+            matrixFlatten = flattenArray(raw3Dmatrix,size3D,N,M);
         }
-        T* flatten() override {
+
+        // --- NEW: constructor đọc ảnh từ path (sử dụng OpenCV) ---
+        // Đọc ảnh giữ nguyên số channel (IMREAD_UNCHANGED), chuẩn hoá về 8-bit và map mỗi channel vào 1 "slice".
+        Matrix(const std::string& path) {
+            cv::Mat img = cv::imread(path, cv::IMREAD_UNCHANGED);
+            if (img.empty()) {
+                throw std::runtime_error(std::string("Cannot read image from: ") + path);
+            }
+
+            int height = img.rows;
+            int width  = img.cols;
+            int channels = img.channels();
+
+            if (channels <= 0) {
+                throw std::runtime_error("Image has no channels");
+            }
+
+            // Set kích thước (size3D = channels)
+            SetDim(channels, height, width);
+
+            // Chuẩn hoá về CV_8U nếu cần
+            cv::Mat img8;
+            if (img.depth() != CV_8U) {
+                // convertTo sẽ scale/clamp nếu cần, nhưng đây là cách nhanh gọn.
+                img.convertTo(img8, CV_8U);
+            } else {
+                img8 = img;
+            }
+
+            // split thành channels (each is single-channel CV_8U)
+            std::vector<cv::Mat> splits;
+            cv::split(img8, splits); // splits.size() == channels
+
+            // allocate flatten buffer
+            matrixFlatten = new T[lenFlattenCache];
+
+            for (int ch = 0; ch < channels; ++ch) {
+                // đảm bảo kích thước hợp lệ
+                if (splits[ch].rows != height || splits[ch].cols != width) {
+                    // unexpected but safe-check
+                    throw std::runtime_error("Unexpected split channel size");
+                }
+
+                for (int r = 0; r < height; ++r) {
+                    const uchar* rowPtr = splits[ch].ptr<uchar>(r);
+                    for (int c = 0; c < width; ++c) {
+                        uchar val = rowPtr[c];
+                        // index layout: channel-major, then row-major within channel
+                        matrixFlatten[ch * (height * width) + r * width + c] = static_cast<T>(val);
+                    }
+                }
+            }
+        }
+        // --- END new constructor ---
+
+        T* flatten() {
             return matrixFlatten;
         }
-        T** get2Dmatrix() {
-            if (raw2DmatrixCache == nullptr)
-                raw2DmatrixCache = construct2Dfromflat(matrixFlatten,n,m);
-            return raw2DmatrixCache;
+
+        void set(uint id3d,uint x,uint y,T val) {
+            checkValidID(x,y);
+            matrixFlatten[id3d * m * n + x * m + y] = val;
         }
 
-        void set(uint x,uint y,T val) {
+        T get(uint id3d,uint x,uint y) {
             checkValidID(x,y);
-            matrixFlatten[x * m + y] = val;
-            raw2DmatrixCache[x][y] = val;
-        }
-
-        T get(uint x,uint y) {
-            checkValidID(x,y);
-            return matrixFlatten[x * m + y];
+            return matrixFlatten[id3d * m * n + x * m + y];
         }
         dim3 getDim() {
-            return dim3(n,m,0);
+            return dim3(size3D,n,m);
         }
 
         Matrix softMax() {
@@ -76,61 +128,63 @@ namespace TommyDat{
             T sum = CallGPUSum(rawResult,lenFlattenCache);
             CallGPUExpMinusMax(rawResult,lenFlattenCache,maxElm);
             CallGPUSoftmax(rawResult,lenFlattenCache,sum);
-            return Matrix(rawResult,n,m);
+            return Matrix(rawResult,size3D,n,m);
         }
-        Matrix convolution(Matrix& kernel,int stride = 1) {
+        Matrix* convolution(Matrix& kernel,int stride = 1) {
             if (kernel.n % 2 == 0 || kernel.m % 2 == 0) {
                 throw std::runtime_error("* Cannot process kernel dimemsion % 2 != 1");
             }
-            T* Bflatten = kernel.flatten();
-            auto result =  CallGPUConvolution(matrixFlatten,n,m,Bflatten,kernel.n,kernel.m,stride,stride);
-            return Matrix(result.newRawMatrix,result.N,result.M);
+            T* kernelFlatten = kernel.flatten();
+            auto result =  CallGPUConvolution(matrixFlatten,size3D,n,m,kernelFlatten,kernel.size3D,kernel.n,kernel.m,stride);
+            return new Matrix(result.newRawMatrix,result.Size3D,result.N,result.M);
         }
-        Matrix maxPooling(int size,int stride) {
-            auto result =  CallGPUmaxPooling(matrixFlatten,n,m,size,stride);
-            return Matrix(result.newRawMatrix,result.N,result.M);
+        Matrix* maxPooling(int size,int stride) {
+            auto result =  CallGPUmaxPooling(matrixFlatten,size3D,n,m,size,stride);
+            return new Matrix(result.newRawMatrix,result.Size3D,result.N,result.M);
         }
-        Matrix operator*(const Matrix& B) {
+        Matrix* operator*(const Matrix& B) {
             T* rawResult;
             if (m != B.n)
                 throw std::runtime_error("* Dimension error, first matrix col not equal to second matrix row");
+            if (size3D != 1)
+                throw std::runtime_error(" We haven't support 3D matrix mul yet");
             rawResult = CallMatrixMul(matrixFlatten,B.matrixFlatten,n,m,B.m);
-            return Matrix(rawResult,n,B.m);
+            return new Matrix(rawResult,n,B.m);
         }
-        Matrix operator+(const Matrix& B) {
+        Matrix* operator+(const Matrix& B) {
             T* rawResult;
-            if (m != B.m || n != B.n)
+            if (m != B.m || n != B.n || size3D != B.size3D)
                 throw std::runtime_error("+ Dimension error,the row and col must equal");
-            rawResult = CallMatrixAddOrSub(matrixFlatten,B.matrixFlatten,n,m,true);
-            return Matrix(rawResult,n,m);
+            rawResult = CallMatrixAddOrSub(matrixFlatten,B.matrixFlatten,n * m,true);
+            return new Matrix(rawResult,n,m);
         }
-        Matrix operator-(const Matrix& B) {
+        Matrix* operator-(const Matrix& B) {
             T* rawResult;
-            if (m != B.m || n != B.n)
+            if (m != B.m || n != B.n || size3D != B.size3D)
                 throw std::runtime_error("- Dimension error,the row and col must equal");
-            rawResult = CallMatrixAddOrSub(matrixFlatten,B.matrixFlatten,n,m,false);
-            return Matrix(rawResult,n,m);
+            rawResult = CallMatrixAddOrSub(matrixFlatten,B.matrixFlatten,n * m,false);
+            return new Matrix(rawResult,n,m);
         }
         // the same with toString() function in java
-        friend std::ostream& operator<<(std::ostream& os, const Matrix& a) {
-            for (int i = 0; i < a.n; i++) {
-                for (int j = 0; j < a.m; j++) {
-                    os << a.matrixFlatten[i * a.m + j] << " ";
+        friend std::ostream& operator<<(std::ostream& os, Matrix& a) {
+            os << " size:" << a.size3D << 'x' << a.n << 'x' << a.m << '\n';
+            for (int s = 0 ;s < a.size3D;s++) {
+                os << "matrix:" << s ;
+                for (int i = 0; i < a.n; i++) {
+                    for (int j = 0; j < a.m; j++) {
+                        os << a.get(s,i,j) << " ";
+                    }
+                    os << "\n";
                 }
-                os << "\n";
             }
             return os;
         }
         ~Matrix() {
             // when the matrix is free;
-
             freeArr(matrixFlatten);
-            for (int i = 0;i < n;i++)
-               freeArr(raw2DmatrixCache[i]);
-            freeArr(raw2DmatrixCache);
         }
         void ReLU() {
-            CallGPURelu(matrixFlatten,n * m);
+            CallGPURelu(matrixFlatten,lenFlattenCache);
         }
         void heInit(int LayerSize,ull seed = 123) {
             CallGPUheInit(matrixFlatten,lenFlattenCache,LayerSize,seed);
@@ -138,19 +192,35 @@ namespace TommyDat{
         void heInit(ull seed = 123) {
             CallGPUheInit(matrixFlatten,lenFlattenCache,lenFlattenCache,seed);
         }
+
+        void normalize(T maxN = 255) {
+            CallGPUNormalize(matrixFlatten,lenFlattenCache,maxN);
+        }
+        template <typename TDeviceFunction>
+        void apply(TDeviceFunction deviceFuntion) {
+            CallGPUapply(matrixFlatten,lenFlattenCache,deviceFuntion);
+        }
+        void transpose() {
+            CallGPUTranspose(matrixFlatten,size3D,n,m);
+        }
+        void reShape(int newSize3D,int newM,int newN) {
+            if (newSize3D * newN * newM != lenFlattenCache)
+                throw std::runtime_error("cannot reshape because the new size not match the old size");
+            SetDim(newSize3D,newM,newN);
+        }
     private:
-        T* matrixFlatten;
-        T** raw2DmatrixCache;
-        int n,m;
+        T* matrixFlatten = nullptr;
+        int n=0,m=0,size3D=0;
         int lenFlattenCache = 0;
         void checkValidID(uint x,uint y) {
             if (x >= n || y >= m)
                 throw std::runtime_error("out of bound");
         }
-        void SetDim(int newN,int newM) {
+        void SetDim(int newSize3D,int newN,int newM) {
+            size3D = newSize3D;
             n = newN;
             m = newM;
-            lenFlattenCache = newN * newM;
+            lenFlattenCache = newN * newM * size3D;
         }
 
     };

@@ -4,7 +4,7 @@
 #ifndef RECNN_CONVOLUTIONLAYE_H
 #define RECNN_CONVOLUTIONLAYE_H
 #include "LayerBase.h"
-#include "../Kernel3D.h"
+
 
 namespace TommyDat {
     class ConvolutionLayer : public Layer {
@@ -12,8 +12,8 @@ namespace TommyDat {
         int outChannel;
         int kernelSize;
         int stride;
-        Kernel3D<float>* kernelList;
-        Matrix<float>** ptr_listOutputMatrix = new Matrix<float>*[outChannel];
+        Matrix<float>* kernelList;
+
     // Convolution sum to nextLayer
     public:
         ConvolutionLayer(int inChannel,int outChannel,int kernelSize,int stride) {
@@ -24,23 +24,15 @@ namespace TommyDat {
             if (outChannel % inChannel != 0) {
                 throw std::runtime_error("outChannel must be a mutiple with inChannel");
             }
-            kernelList = new Kernel3D<float>(outChannel,kernelSize,kernelSize);
+            kernelList = new Matrix<float>(outChannel,kernelSize,kernelSize);
         }
 
         void inference(void* ptr_lastLayerInput) override {
-            Kernel3D<float>* inputMatrix = static_cast<Kernel3D<float>*>(ptr_lastLayerInput);
-
-            for (int i = 0;i < outChannel;i++) {
-                int idInputMatrix = i % inChannel;
-                Matrix output = inputMatrix->data[idInputMatrix]->convolution(*kernelList->data[i]);
-                ptr_listOutputMatrix[i] = &output;
-            }
-
-            dim3 outMatrixDim = ptr_listOutputMatrix[0]->getDim();
-            Kernel3D outputMatrix(ptr_listOutputMatrix,outChannel,outMatrixDim.x,outMatrixDim.y);
-
+            Matrix<float>* inputMatrix = static_cast<Matrix<float>*>(ptr_lastLayerInput);
+            Matrix<float>* output = inputMatrix->convolution(*kernelList,stride);
+            setNewActivation(output);
             if (nextLayer != nullptr)
-                nextLayer->inference(&outputMatrix);
+                nextLayer->inference(output);
         }
         void backward(void* nextLayerInput) override {
 

@@ -9,7 +9,7 @@
 template <typename T>
 __global__ void GPUmax(T* inputArr,T* blockOutputArr) {
     __shared__ float shareMem[1024];
-    int id = getID();
+    int id = getIDx();
     int tid = threadIdx.x;
 
     shareMem[tid] = inputArr[id];

@@ -1,24 +1,35 @@
 #include <iostream>
-#include "Component/Kernel3D.h"
+
 #include "Component/TommyDatNeuralNet/NeuralNetwork.h"
 #include "Component/Matrix.h"
 #include "Component/Layers/ConvolutionLayer.h"
+#include "Component/Layers/MaxPoolingLayer.h"
+
 #include "Component/TommyDatNeuralNet/NeuralInput.h"
 using namespace std;
 using namespace TommyDat;
 
 int main() {
-    Matrix a = Matrix(10,10 ,2.0f);
-    a.heInit();
+    Matrix a = Matrix(10,3,3 ,2.0f);
+    Matrix b = Matrix(3,5,5,10.f);
+
+
+    a.heInit(); // heInit is random on neural network initalizeation
     cout << a;
-    cout << a.maxPooling(2,2);
-    //Matrix b = Matrix(10,10 ,2.0f);
-    // b.set(3,4,-14);
-    //kernel.set(1,1,4);
-    // NeuralNetwork<NeuralInput> a;
-    // auto layer1 = ConvolutionLayer(3,6,10,3);
-    // a.Add(&layer1);
-    // Kernel3D<float> test(3,3,3);
-    //cout  << test;
+    a.normalize();
+      a.apply([] __device__ (int x) {
+          return x * x;
+      });
+    a.transpose();
+
+    cout << "after normalize \n" << a;
+     NeuralNetwork<NeuralInput> net;
+    auto layer1 = ConvolutionLayer(3,6,3,3);
+    auto layer2 = MaxPoolingLayer(2,2);
+    net.add(&layer1);
+    net.add(&layer2);
+    NeuralInput n =  NeuralInput("./testdata1.png");
+    net.predict(n);
+    net.GetPredictResult();
     return 0;
 }

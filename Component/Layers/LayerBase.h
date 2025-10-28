@@ -7,19 +7,29 @@
 namespace TommyDat {
 
     class Layer {
+    private:
+        Matrix<float>* activation = nullptr;
     public:
-        void setLastLayer(Layer* lastLayer) {
-            this->lastLayer = lastLayer;
+        void setNewActivation(Matrix<float>* newAc) {
+            delete[] activation;
+            activation = newAc;
         }
-        void setNextLayer(Layer* lastLayer) {
-            this->nextLayer = nextLayer;
+        Matrix<float>* getActivation() {
+            return activation;
+        }
+        void setLastLayer(Layer* newLastLayer) {
+            this->lastLayer = newLastLayer;
+        }
+        void setNextLayer(Layer* newNextLayer) {
+            this->nextLayer = newNextLayer;
         }
         //,Layer* nextLayer
         virtual void inference(void* lastLayerInput) = 0;
         virtual void backward(void* nextLayerInput) = 0;
     protected:
-        Layer* nextLayer;
-        Layer* lastLayer;
+
+        Layer* nextLayer = nullptr;
+        Layer* lastLayer = nullptr;
     };
 }
 #endif //RECNN_LAYERBASE_H

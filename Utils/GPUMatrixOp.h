@@ -19,8 +19,9 @@ __host__ __device__  void set2D(T* arr2Dflatten,int x,int y,int n,int m,T val) {
     arr2Dflatten[x * m + y] = val;
 }
 template <typename T>
-__host__ T* flattenArray(T* arr,int n,int m) {
-    T* res = new T[n * m];
+__host__ T* flattenArray(T* arr,int size3D,int n,int m) {
+    T* res = new T[n * m * size3D];
+    for (int s = 0;s < size3D;s++)
     for (int i = 0;i < n;i++)
         for (int j = 0;j < m;j++) {
             res[i * m + j] = arr[i][j];
@@ -54,10 +55,10 @@ __global__ void matrixMulTile(const T* A, const T* B, T* C, int N, int K, int M)
     T acc = static_cast<T>(0);
     int numPhases = (K + TILE - 1) / TILE;
     for (int ph = 0; ph < numPhases; ++ph) {
-        int a_col = ph * TILE + tx;     // column index in A to load
-        int b_row = ph * TILE + ty;     // row index in B to load
-        tileA[ty][tx] = (row < N && a_col < K) ? A[row * K + a_col] : 0;
-        tileB[ty][tx] = (b_row < K && col < M) ? B[b_row * M + col] : 0;
+        int aCol = ph * TILE + tx;     // column index in A to load
+        int bRow = ph * TILE + ty;     // row index in B to load
+        tileA[ty][tx] = (row < N && aCol < K) ? A[row * K + aCol] : 0;
+        tileB[ty][tx] = (bRow < K && col < M) ? B[bRow * M + col] : 0;
         __syncthreads();
         for (int k = 0; k < TILE; ++k) acc += tileA[ty][k] * tileB[k][tx];
         __syncthreads();
@@ -93,30 +94,29 @@ T* CallMatrixMul(T *A,T *B,int HangA,int CotA,int CotB) {
     return h_outp;
 }
 template <typename T>
-__global__ void MatrixAddOrSub(T *A,T *B,T *C,int Hang,int Cot,bool isAdd) {
+__global__ void MatrixAddOrSub(T *A,T *B,T *C,int n,bool isAdd) {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
-    int y = blockDim.y * blockIdx.y + threadIdx.y;
-    int thisIdx = x * Cot + y;
-
+    if (x >= n)
+        return;
     if (isAdd)
-        C[thisIdx] = A[thisIdx] + B[thisIdx];
+        C[x] = A[x] + B[x];
     else
-        C[thisIdx] = A[thisIdx] - B[thisIdx];
+        C[x] = A[x] - B[x];
 }
 template <typename T>
-T* CallMatrixAddOrSub(T* A,T *B,int Hang,int Cot,bool isAdd) {
+T* CallMatrixAddOrSub(T* A,T *B,int n,bool isAdd) {
     T* d_A,*d_B;
-    T* d_outp,*h_outp = new T[Hang * Cot];
-    int allocSize = sizeof(T) * Hang * Cot;
+    T* d_outp,*h_outp = new T[n];
+    int allocSize = sizeof(T) * n;
     cudaMalloc(&d_A,allocSize);
     cudaMalloc(&d_B, allocSize);
     cudaMalloc(&d_outp,allocSize);
     cudaMemcpy(d_A,A,allocSize,cudaMemcpyHostToDevice);
     cudaMemcpy(d_B,B,allocSize,cudaMemcpyHostToDevice);
-    dim3 blocks((Hang + 31) / 32,(Cot + 31) / 32);
-    dim3 threads(32,32);
-    MatrixAddOrSub<<<blocks,threads>>>(d_A,d_B,d_outp,Hang,Cot,isAdd);
-    cudaDeviceSynchronize();
+    int blocks,threads;
+    CaculateBlockAndThreadNumber(n,blocks,threads);
+    MatrixAddOrSub<<<blocks,threads>>>(d_A,d_B,d_outp,n,isAdd);
+
     cudaMemcpy(h_outp,d_outp,allocSize,cudaMemcpyDeviceToHost);
     cudaFree(d_A);
     cudaFree(d_B);
@@ -125,59 +125,61 @@ T* CallMatrixAddOrSub(T* A,T *B,int Hang,int Cot,bool isAdd) {
 }
 // assume that kernel is small
 template <typename T>
-__global__ void GPUConvolution(T* A,T* output,int N,int M,T* kernel,int kn,int km,int strideX,int strideY,T sumOfKernel) {
+__global__ void GPUConvolution(T* A,T* output,int size3D,int N,int M,T* kernel,int ks,int kn,int km,int stride,T sumOfKernel) {
     // Kernel always small so no need to use tile and share memory
     T value = 0;
-    int idx = blockDim.x * blockIdx.x + threadIdx.x;
-    int idy = blockDim.y * blockIdx.y + threadIdx.y;
-    for (int i = 0;i < kn;i++)
-        for (int j = 0;j < km;j++)
-        {
-            int idxWoffset  = (idx * strideX - kn / 2) + i;
-            int idyWOffset = (idy * strideY - km / 2) + j;
-            if (idxWoffset < 0 || idyWOffset < 0 || idxWoffset >= N || idyWOffset >= M)
-                continue;
-            value += kernel[i * km + j] * A[(idxWoffset) * M + (idyWOffset )] ;
-        }
+    int inChannel = size3D,outChannel = ks;
+    int ids = getIDx();
+    int idx = getIDy();
+    int idy = getIDz();
+    if (ids >= ks)
+        return;
+        for (int i = 0;i < kn;i++)
+            for (int j = 0;j < km;j++)
+            {
+                int idxWoffset  = (idx * stride - kn / 2) + i;
+                int idyWoffset = (idy * stride - km / 2) + j;
+                if (idxWoffset < 0 || idyWoffset < 0  || idxWoffset >= N || idyWoffset >= M)
+                    continue;
+                value += kernel[ids * km * kn + i * km + j] * A[(ids % inChannel) * M * N + (idxWoffset) * M + (idyWoffset )] ;
+            }
     if (idx  <  N && idy < M) {
-        output[idx * M + idy] = value / sumOfKernel;
+        output[ids * N * M + idx * M + idy] = value / sumOfKernel;
     }
 }
-template <typename T>
-struct RawMatrixOutput {
-    T* newRawMatrix;
-    int N,M;
-};
-template <typename T>
-RawMatrixOutput<T> CallGPUConvolution(T* A,int N,int M,T* kernel,int kn,int km,int strideX = 1,int strideY = 1) {
-    T sumOfKernel = CPUsum(kernel,kn * km);
-    int outputN = (N  + strideX - 1) / strideX;
-    int outputM = (M  + strideY - 1) / strideY;
 
-    T* d_A,*d_kernel,*d_output,*h_output = new T[outputM * outputN];
-    int allocSize = sizeof(T) * N * M;
+template <typename T>
+RawMatrixOutput<T> CallGPUConvolution(T* A,int size3D,int N,int M,T* kernel,int ks,int kn,int km,int stride) {
+    int lenKer = kn * km * ks;
+    int inChannel = size3D,outChannel = ks;
+    T sumOfKernel = CPUsum(kernel,lenKer);
+    int outputS = (ks + stride - 1) / stride;
+    int outputN = (N  + stride - 1) / stride;
+    int outputM = (M  + stride - 1) / stride;
+    int lenOutput = outputS * outputM * outputN;
+
+    T* d_A,*d_kernel,*d_output,*h_output = new T[lenOutput];
+    int allocSize = sizeof(T) * N * M * size3D;
     cudaMalloc(&d_A,allocSize);
     cudaMemcpy(d_A,A,allocSize,cudaMemcpyHostToDevice);
 
+    cudaMalloc(&d_output,sizeof(T) * lenOutput);
+    cudaMemcpy(d_output,A,sizeof(T) * lenOutput,cudaMemcpyHostToDevice);
 
-    cudaMalloc(&d_output,sizeof(T) * outputN * outputM);
-    cudaMemcpy(d_output,A,sizeof(T) * outputN * outputM,cudaMemcpyHostToDevice);
+    cudaMalloc(&d_kernel,sizeof(T) * lenKer);
+    cudaMemcpy(d_kernel,kernel,sizeof(T) * lenKer,cudaMemcpyHostToDevice);
+    dim3 blocks,threads;
+    Caculate3DBlockAndThread(outChannel,N,M,blocks,threads);
+    GPUConvolution<<<blocks,threads>>>(d_A,d_output,size3D,N,M,d_kernel,ks,kn,km,stride,sumOfKernel);
 
-    cudaMalloc(&d_kernel,sizeof(T) * kn * km);
-    cudaMemcpy(d_kernel,kernel,sizeof(T) * kn * km,cudaMemcpyHostToDevice);
-
-    dim3 blocks((N + 31) / 32,(M + 31) / 32);
-    dim3 threads(32,32);
-    GPUConvolution<<<blocks,threads>>>(d_A,d_output,N,M,d_kernel,kn,km,strideX,strideY,sumOfKernel);
-
-    cudaMemcpy(h_output,d_output,sizeof(T) * outputN * outputM,cudaMemcpyDeviceToHost);
+    cudaMemcpy(h_output,d_output,sizeof(T) * lenOutput,cudaMemcpyDeviceToHost);
     cudaFree(d_A);
     cudaFree(d_kernel);
-    return { h_output,outputN,outputM };
+    return { h_output,outputS,outputN,outputM };
 }
 template <typename T>
 __global__ void GPURelu(T *A,int n) {
-    int id = getID();
+    int id = getIDx();
     if (A[id] < 0 && id < n)
         A[id] = 0;
 }
@@ -195,7 +197,7 @@ void CallGPURelu(T *A,int n) {
 }
 #include <curand_kernel.h>
 __global__ void GPUheInit(float* A,int n,int in,ull seed) {
-    int id = getID();
+    int id = getIDx();
     if (id >=  n)
         return;
     curandState state;
@@ -218,58 +220,114 @@ void CallGPUheInit(float* A,int n,int in,ull seed) {
     cudaFree(d_a);
 }
 template <typename T>
-__global__ void GPUmaxPooling(T* inputFlatten,T* output,int n,int m,int outN,int outM,int size,int stride) {
+__global__ void GPUmaxPooling(T* inputFlatten,T* output,int size3D,int n,int m,int outN,int outM,int size,int stride) {
     // sync for value into share mem
-    int idx = threadIdx.x + blockDim.x  * blockIdx.x;
-    int idy = threadIdx.y + blockDim.y * blockIdx.y;
-    if (idx >= outN || idy >= outM) return;
-
+    int ids = getIDx();
+    int idx = getIDy();
+    int idy = getIDz();
+    if (idx >= outN || idy >= outM || ids >= size3D)
+        return;
     int idxOffsetStride = idx * stride;
     int idyOffsetStride = idy * stride;
-
     T max = -3e19;
 
-    for (int i = 0;i < size;++i) {
-        int idxCheck = idxOffsetStride + i;
+        for (int i = 0;i < size;++i) {
+                int idyCheck = idxOffsetStride + i;
+                if (idyCheck >= n)
+                    break;
+            for (int j = 0;j < size;++j) {
+                int idzCheck = idyOffsetStride + j;
 
-        if (idxCheck >= n)
-            break;
-
-        for (int j = 0;j < size;++j) {
-            int idyCheck = idyOffsetStride + j;
-
-            if (idyCheck >= m)
-                break;
-
-            T check = inputFlatten[idxCheck * m + idyCheck];
-            if (check > max) {
-                max = check;
+                if (idzCheck >= m)
+                    break;
+                T check = inputFlatten[ ids * m * n + idyCheck  * m + idzCheck];
+                if (check > max) {
+                    max = check;
+                }
             }
         }
-    }
-
-        output[idx * outM + idy] = max;
+        output[ ids * outM * outN +  idx * outM + idy] = max;
 }
-template <typename T>
-RawMatrixOutput<T> CallGPUmaxPooling(T* A,int n,int m,int size,int stride) {
-    T* d_A;
-    cudaMalloc(&d_A,sizeof(T) * n * m);
-    cudaMemcpy(d_A,A,sizeof(T) * n * m,cudaMemcpyHostToDevice);
 
-    dim3 blocks((n + 31) / 32,(m + 31) / 32);
-    dim3 threads(32,32);
+template <typename T>
+RawMatrixOutput<T> CallGPUmaxPooling(T* A,int size3D,int n,int m,int size,int stride) {
+    T* d_A;
+    int len = size3D * n * m;
+    cudaMalloc(&d_A,sizeof(T) * len );
+    cudaMemcpy(d_A,A,sizeof(T) * len,cudaMemcpyHostToDevice);
 
     int outN = (n + stride - 1) / stride;
     int outM = (m + stride - 1) / stride;
-    T* h_output = new T[outN  * outM],*d_output;
-    cudaMalloc(&d_output,sizeof(T) *  outN * outM);
+    dim3 blocks,threads;
+    Caculate3DBlockAndThread(size3D,outN,outM,blocks,threads);
 
-    GPUmaxPooling<<<blocks,threads>>>(d_A,d_output,n,m,outN,outM,size,stride);
-    cudaMemcpy(h_output,d_output,sizeof(T) * outN * outM,cudaMemcpyDeviceToHost);
+    int lenOut = size3D *  outN  * outM;
+
+    T* h_output = new T[lenOut],*d_output;
+    cudaMalloc(&d_output,sizeof(T) *  lenOut);
+    GPUmaxPooling<<<blocks,threads>>>(d_A,d_output,size3D,n,m,outN,outM,size,stride);
+    cudaMemcpy(h_output,d_output,sizeof(T) * lenOut,cudaMemcpyDeviceToHost);
     cudaFree(d_A);
     cudaFree(d_output);
 
-    return { h_output , outN, outM };
+    return { h_output, size3D, outN, outM };
 }
+template <typename T>
+__global__ void GPUNormalize(T* A,int n,T maxN) {
+    int id = getIDx();
+    if (id < n)
+        A[id] /= maxN;
+}
+template <typename T>
+void CallGPUNormalize(T* A,int n,T maxN) {
+    T* d_a;
+    cudaMalloc(&d_a,sizeof(T) * n);
+    cudaMemcpy(d_a,A,sizeof(T) * n,cudaMemcpyHostToDevice);
 
+    int blocks,threads;
+    CaculateBlockAndThreadNumber(n,blocks,threads);
+    GPUNormalize<<<blocks,threads>>>(d_a,n,maxN);
+    cudaMemcpy(A,d_a,sizeof(T) * n,cudaMemcpyDeviceToHost);
+    cudaFree(d_a);
+}
+template <typename T,typename TdeviceFunc>
+__global__ void GPUapply(T* A,int n,TdeviceFunc f) {
+    int id = getIDx();
+    if (id < n)
+        A[id] = f(A[id]);
+}
+template <typename T,typename TdeviceFunc>
+void CallGPUapply(T* A,int n,TdeviceFunc f) {
+    T* d_a;
+    cudaMalloc(&d_a,sizeof(T) * n);
+    cudaMemcpy(d_a,A,sizeof(T) * n,cudaMemcpyHostToDevice);
+
+    int blocks,threads;
+    CaculateBlockAndThreadNumber(n,blocks,threads);
+    GPUapply<<<blocks,threads>>>(d_a,n,f);
+    cudaMemcpy(A,d_a,sizeof(T) * n,cudaMemcpyDeviceToHost);
+    cudaFree(d_a);
+}
+template <typename T>
+__global__ void GPUTranspose(T* A,int size3D,int n,int m) {
+    int s = getIDx();
+    int x = getIDy();
+    int y = getIDz();
+    if (s >= size3D || x >= n)
+        return;
+    swapDevice(A[s * n * m + x * m + y],A[s * n * m + y * m + x]);
+}
+template <typename T>
+void CallGPUTranspose(T* A,int size3D,int n,int m) {
+    T* d_a;
+    int len = size3D * n * m;
+    cudaMalloc(&d_a,sizeof(T) * len);
+    cudaMemcpy(d_a,A,sizeof(T) * len,cudaMemcpyHostToDevice);
+
+    dim3 blocks,threads;
+    Caculate3DBlockAndThread(size3D,n,m,blocks,threads);
+    GPUTranspose<<<blocks,threads>>>(d_a,size3D,n,m);
+    cudaMemcpy(A,d_a,sizeof(T) * len,cudaMemcpyDeviceToHost);
+    cudaFree(d_a);
+}
 #endif //RECNN_GPUMATRIXMUL_H
