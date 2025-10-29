@@ -13,9 +13,12 @@ using namespace TommyDat;
 // make a class to backtracing
 // checking the he init why always random
 int main() {
-    //  Matrix ker = Matrix<Tracebackable<float>>(9,3,3);
-    // Matrix a = Matrix<Tracebackable<float>>(3,32,32,3.f);
-    // a.normalize();
+
+    //  Matrix a = Matrix<Tracebackable<float>>(6,3,3);
+    //
+    //  cout << "before:\n" << a << '\n';
+    //
+    // cout << "after:\n" << *a.maxPooling(2,2);
     // cout << "input ker:\n" << ker;
     // cout << "output \n" << *a.convolution(ker);
 
@@ -25,8 +28,7 @@ int main() {
     net.add(&layer1);
     net.add(&layer2);
     NeuralInput n = NeuralInput("./testdata1.png");
-
     net.predict(n);
-   // net.GetPredictResult();
+    net.GetPredictResult();
     return 0;
 }

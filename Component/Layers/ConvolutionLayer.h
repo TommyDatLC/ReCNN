@@ -35,9 +35,9 @@ namespace TommyDat {
         void inference(void* ptr_lastLayerInput) override {
             Matrix<Tracebackable<float>>* inputMatrix = static_cast<Matrix<Tracebackable<float>>*>(ptr_lastLayerInput);
             Matrix<Tracebackable<float>>* output = inputMatrix->convolution(*kernelList,stride);
-            // output->ReLU();
-             // std::cout << "input matrix \n" << *inputMatrix;
-            std::cout << "output matrix \n" << *output;
+            output->ReLU();
+            // std::cout << "input matrix \n" << *inputMatrix;
+            // std::cout << "output matrix \n" << *output;
             setNewActivation(output);
             if (nextLayer != nullptr)
                 nextLayer->inference(output);

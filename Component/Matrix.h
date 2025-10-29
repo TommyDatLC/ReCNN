@@ -23,18 +23,18 @@ namespace TommyDat{
         // copy constructor (sửa memcpy)
         Matrix(Matrix& B) {
             SetDim(B.size3D,B.n,B.m);
-            matrixFlatten = new T[n * m * size3D];
-            memcpy(matrixFlatten, B.flatten(), sizeof(T) * size3D * n * m);
+            matrixFlatten = new T[lenFlattenCache];
+            memcpy(matrixFlatten, B.flatten(), sizeof(T) * lenFlattenCache);
         }
 
         Matrix(int size3D,int N,int M) {
             SetDim(size3D,N,M);
-            matrixFlatten = new T[size3D * N * M];
+            matrixFlatten = new T[lenFlattenCache];
             heInit();
         }
         Matrix(int size3D,int N,int M,T val) {
             SetDim(size3D,N,M);
-            matrixFlatten = new T[N * M * size3D];
+            matrixFlatten = new T[lenFlattenCache];
             for (int s = 0;s < size3D;s++)
                 for (int i = 0;i < N;i++)
                     for (int j = 0;j < M;j++)
@@ -154,15 +154,15 @@ namespace TommyDat{
             T* rawResult;
             if (m != B.m || n != B.n || size3D != B.size3D)
                 throw std::runtime_error("+ Dimension error,the row and col must equal");
-            rawResult = CallMatrixAddOrSub(matrixFlatten,B.matrixFlatten,n * m,true);
-            return new Matrix(rawResult,n,m);
+            rawResult = CallMatrixAddOrSub(matrixFlatten,B.matrixFlatten,lenFlattenCache,true);
+            return new Matrix(rawResult,size3D,n,m);
         }
         Matrix* operator-(const Matrix& B) {
             T* rawResult;
             if (m != B.m || n != B.n || size3D != B.size3D)
                 throw std::runtime_error("- Dimension error,the row and col must equal");
-            rawResult = CallMatrixAddOrSub(matrixFlatten,B.matrixFlatten,n * m,false);
-            return new Matrix(rawResult,n,m);
+            rawResult = CallMatrixAddOrSub(matrixFlatten,B.matrixFlatten,lenFlattenCache,false);
+            return new Matrix(rawResult,size3D,n,m);
         }
         // the same with toString() function in java
         friend std::ostream& operator<<(std::ostream& os, Matrix& a) {
@@ -187,11 +187,10 @@ namespace TommyDat{
         void ReLU() {
             CallGPURelu(matrixFlatten,lenFlattenCache);
         }
-        void heInit(int LayerSize,ull seed = 123) {
-
+        void heInit(int LayerSize,ull seed = 0) {
             CallGPUheInit(matrixFlatten,lenFlattenCache,LayerSize,seed);
         }
-        void heInit(ull seed = 123) {
+        void heInit(ull seed = 0) {
             CallGPUheInit(matrixFlatten,lenFlattenCache,lenFlattenCache,seed);
         }
 
