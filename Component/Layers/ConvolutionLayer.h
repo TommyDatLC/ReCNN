@@ -15,7 +15,7 @@ namespace TommyDat {
         int outChannel;
         int kernelSize;
         int stride;
-
+//
         Matrix<Tracebackable<float>>* kernelList;
 
     // Convolution sum to nextLayer
