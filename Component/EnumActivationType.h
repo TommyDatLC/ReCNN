@@ -5,7 +5,7 @@
 #ifndef RECNN_ENUMACTIVATION_H
 #define RECNN_ENUMACTIVATION_H
 
-enum ActivationType {
+enum EnumActivationType {
     softMax,
     ReLU
 };

@@ -12,7 +12,7 @@ add_executable(ReCNN
         Component/Matrix.h
         Utils/GPUSoftMax.h
         Utils/Sum.h
-        Component/EnumActivation.h
+        Component/EnumActivationType.h
         Component/TommyDatNeuralNet/NeuralNetwork.h
         Component/Layers/LayerBase.h
         Component/Layers/ConvolutionLayer.h
@@ -20,6 +20,7 @@ add_executable(ReCNN
         Component/TommyDatNeuralNet/NeuralInput.h
         Component/Layers/MaxPoolingLayer.h
         Component/NNlayer.h
+        Component/Tracebackable.h
 )
 
 include_directories(${OpenCV_INCLUDE_DIRS})

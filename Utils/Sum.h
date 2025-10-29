@@ -49,7 +49,7 @@ T CallGPUSum(T *input,int length)
 
 template <typename T>
 T CPUsum(T* arr,int len) {
-    T res = 0;
+    T res = 0.0f;
     for (int i =0 ;i < len;i++)
         res += arr[i];
     return res;

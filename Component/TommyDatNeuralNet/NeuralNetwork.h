@@ -39,7 +39,7 @@ namespace TommyDat {
             std::cout << *layers[n - 1]->getActivation();
         }
         void CaculateError() {
-            // tính lỗi và in ra màn hình Cross Entropy error
+
         }
     private:
         void CheckLastLayerValid() {

@@ -4,17 +4,19 @@
 
 #ifndef RECNN_LAYERBASE_H
 #define RECNN_LAYERBASE_H
+#include "../Tracebackable.h"
+
 namespace TommyDat {
 
     class Layer {
     private:
-        Matrix<float>* activation = nullptr;
+        Matrix<Tracebackable<float>>* activation = nullptr;
     public:
-        void setNewActivation(Matrix<float>* newAc) {
+        void setNewActivation(Matrix<Tracebackable<float>>* newAc) {
             delete[] activation;
             activation = newAc;
         }
-        Matrix<float>* getActivation() {
+        Matrix<Tracebackable<float>>* getActivation() {
             return activation;
         }
         void setLastLayer(Layer* newLastLayer) {
@@ -23,11 +25,11 @@ namespace TommyDat {
         void setNextLayer(Layer* newNextLayer) {
             this->nextLayer = newNextLayer;
         }
-        //,Layer* nextLayer
+        //Layer* nextLayer
+
         virtual void inference(void* lastLayerInput) = 0;
         virtual void backward(void* nextLayerInput) = 0;
     protected:
-
         Layer* nextLayer = nullptr;
         Layer* lastLayer = nullptr;
     };

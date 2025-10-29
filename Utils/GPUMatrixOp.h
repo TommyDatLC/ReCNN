@@ -7,19 +7,20 @@
 #include "GPUmax.h"
 #include "Sum.h"
 #include "Utility.cuh"
+#include "../Component/Tracebackable.h"
 
 template <typename T>
-__host__ __device__ T get2D(T* arr2Dflatten,int x,int y,int n,int m) {
+__host__ __device__ T get2D(const T* __restrict__ arr2Dflatten,int x,int y,int n,int m) {
     if (x >= n || y >= m)
         return 0;
     return arr2Dflatten[x * m + y];
 }
 template <typename T>
-__host__ __device__  void set2D(T* arr2Dflatten,int x,int y,int n,int m,T val) {
+__host__ __device__  void set2D(T* __restrict__ arr2Dflatten,int x,int y,int n,int m,T val) {
     arr2Dflatten[x * m + y] = val;
 }
 template <typename T>
-__host__ T* flattenArray(T* arr,int size3D,int n,int m) {
+__host__ T* flattenArray(const T* __restrict__ arr,int size3D,int n,int m) {
     T* res = new T[n * m * size3D];
     for (int s = 0;s < size3D;s++)
     for (int i = 0;i < n;i++)
@@ -30,7 +31,7 @@ __host__ T* flattenArray(T* arr,int size3D,int n,int m) {
     return res;
 }
 template <typename T>
-T** construct2Dfromflat(T* arr,int n,int m) {
+T** construct2Dfromflat(T* __restrict__ arr,int n,int m) {
     T** result = new T*[n];
     for (int i = 0;i < n;i++) {
         result[i] = new T[m];
@@ -42,7 +43,7 @@ T** construct2Dfromflat(T* arr,int n,int m) {
 }
 
 template <typename T>
-__global__ void matrixMulTile(const T* A, const T* B, T* C, int N, int K, int M) {
+__global__ void matrixMulTile(const T* A, const T* B, T* __restrict__ C, int N, int K, int M) {
     constexpr int TILE = 32;
     __shared__ T tileA[TILE][TILE];
     __shared__ T tileB[TILE][TILE];
@@ -68,7 +69,7 @@ __global__ void matrixMulTile(const T* A, const T* B, T* C, int N, int K, int M)
 
 
 template <typename T>
-T* CallMatrixMul(T *A,T *B,int HangA,int CotA,int CotB) {
+T* CallMatrixMul(const T* A,const T* B,int HangA,int CotA,int CotB) {
     T* d_outp,*h_outp = new T[HangA * CotB];
     T* d_a;
     T* d_b;
@@ -94,57 +95,74 @@ T* CallMatrixMul(T *A,T *B,int HangA,int CotA,int CotB) {
     return h_outp;
 }
 template <typename T>
-__global__ void MatrixAddOrSub(T *A,T *B,T *C,int n,bool isAdd) {
+__global__ void MatrixAddOrSub(T* A,const T* B,int n,bool isAdd) {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     if (x >= n)
         return;
     if (isAdd)
-        C[x] = A[x] + B[x];
+        A[x] += B[x];
     else
-        C[x] = A[x] - B[x];
+        A[x] -= B[x];
 }
 template <typename T>
-T* CallMatrixAddOrSub(T* A,T *B,int n,bool isAdd) {
-    T* d_A,*d_B;
-    T* d_outp,*h_outp = new T[n];
+T* CallMatrixAddOrSub(const T* A,const T* B,int n,bool isAdd) {
+    T* d_A,
+     * d_B;
+    T* h_outp = new T[n];
     int allocSize = sizeof(T) * n;
     cudaMalloc(&d_A,allocSize);
     cudaMalloc(&d_B, allocSize);
-    cudaMalloc(&d_outp,allocSize);
+
     cudaMemcpy(d_A,A,allocSize,cudaMemcpyHostToDevice);
     cudaMemcpy(d_B,B,allocSize,cudaMemcpyHostToDevice);
     int blocks,threads;
     CaculateBlockAndThreadNumber(n,blocks,threads);
-    MatrixAddOrSub<<<blocks,threads>>>(d_A,d_B,d_outp,n,isAdd);
+    MatrixAddOrSub<<<blocks,threads>>>(d_A,d_B,n,isAdd);
 
-    cudaMemcpy(h_outp,d_outp,allocSize,cudaMemcpyDeviceToHost);
+    cudaMemcpy(h_outp,d_A,allocSize,cudaMemcpyDeviceToHost);
     cudaFree(d_A);
     cudaFree(d_B);
-    cudaFree(d_outp);
+
     return h_outp;
 }
 // assume that kernel is small
 template <typename T>
-__global__ void GPUConvolution(T* A,T* output,int size3D,int N,int M,T* kernel,int ks,int kn,int km,int stride,T sumOfKernel) {
+__global__ void GPUConvolution(
+    const T* __restrict__ A,
+    int size3D,int N,int M,
+          T* __restrict__  output,
+    int OutputS,int OutputN,int OutputM,
+    const T* __restrict__ kernel,
+    int ks,int kn,int km,
+    int stride) {
     // Kernel always small so no need to use tile and share memory
     T value = 0;
     int inChannel = size3D,outChannel = ks;
     int ids = getIDx();
     int idx = getIDy();
     int idy = getIDz();
-    if (ids >= ks)
+    int idxOffsetStride = idx * stride;
+    int idyOffsetStride = idy * stride;
+    if (ids >= OutputS)
         return;
         for (int i = 0;i < kn;i++)
             for (int j = 0;j < km;j++)
             {
-                int idxWoffset  = (idx * stride - kn / 2) + i;
-                int idyWoffset = (idy * stride - km / 2) + j;
+                int idxWoffset  = (idxOffsetStride - kn / 2) + i;
+                int idyWoffset = (idyOffsetStride - km / 2) + j;
                 if (idxWoffset < 0 || idyWoffset < 0  || idxWoffset >= N || idyWoffset >= M)
                     continue;
                 value += kernel[ids * km * kn + i * km + j] * A[(ids % inChannel) * M * N + (idxWoffset) * M + (idyWoffset )] ;
             }
-    if (idx  <  N && idy < M) {
-        output[ids * N * M + idx * M + idy] = value / sumOfKernel;
+    if (idx  <  OutputN && idy < OutputM) {
+        int id = ids * OutputN * OutputM + idx * OutputM + idy;
+        int idOffset = ids * N * M + idxOffsetStride * M + idyOffsetStride;
+
+        output[id] = value;
+        // if constexpr (std::is_same_v<T,TommyDat::Tracebackable<float>>) {
+        //     output[id].traceBackID = idOffset;
+        //
+        // }
     }
 }
 
@@ -152,26 +170,29 @@ template <typename T>
 RawMatrixOutput<T> CallGPUConvolution(T* A,int size3D,int N,int M,T* kernel,int ks,int kn,int km,int stride) {
     int lenKer = kn * km * ks;
     int inChannel = size3D,outChannel = ks;
-    T sumOfKernel = CPUsum(kernel,lenKer);
-    int outputS = (ks + stride - 1) / stride;
+
+    int outputS = (ks);
     int outputN = (N  + stride - 1) / stride;
     int outputM = (M  + stride - 1) / stride;
     int lenOutput = outputS * outputM * outputN;
 
-    T* d_A,*d_kernel,*d_output,*h_output = new T[lenOutput];
+    T* d_A,*d_kernel;
     int allocSize = sizeof(T) * N * M * size3D;
     cudaMalloc(&d_A,allocSize);
     cudaMemcpy(d_A,A,allocSize,cudaMemcpyHostToDevice);
 
+    T *d_output,*h_output = new T[lenOutput];
     cudaMalloc(&d_output,sizeof(T) * lenOutput);
-    cudaMemcpy(d_output,A,sizeof(T) * lenOutput,cudaMemcpyHostToDevice);
 
     cudaMalloc(&d_kernel,sizeof(T) * lenKer);
     cudaMemcpy(d_kernel,kernel,sizeof(T) * lenKer,cudaMemcpyHostToDevice);
     dim3 blocks,threads;
     Caculate3DBlockAndThread(outChannel,N,M,blocks,threads);
-    GPUConvolution<<<blocks,threads>>>(d_A,d_output,size3D,N,M,d_kernel,ks,kn,km,stride,sumOfKernel);
-
+    GPUConvolution<<<blocks,threads>>>(d_A,size3D,N,M,
+                                        d_output,outputS,outputN,outputM,
+                                        d_kernel,ks,kn,km,
+                                        stride);
+    cudaDeviceSynchronize();
     cudaMemcpy(h_output,d_output,sizeof(T) * lenOutput,cudaMemcpyDeviceToHost);
     cudaFree(d_A);
     cudaFree(d_kernel);
@@ -180,15 +201,19 @@ RawMatrixOutput<T> CallGPUConvolution(T* A,int size3D,int N,int M,T* kernel,int 
 template <typename T>
 __global__ void GPURelu(T *A,int n) {
     int id = getIDx();
-    if (A[id] < 0 && id < n)
+    if (A[id] < 0 && id < n) {
         A[id] = 0;
+        if constexpr (std::is_same_v<T,TommyDat::Tracebackable<float>>) {
+              A[id].traceBackID = -1;
+        }
+    }
 }
 template <typename T>
-void CallGPURelu(T *A,int n) {
+void CallGPURelu(T* __restrict__ A,int n) {
     T* d_a;
     cudaMalloc(&d_a,sizeof(T) * n);
     cudaMemcpy(d_a,A,sizeof(T) * n,cudaMemcpyHostToDevice);
-
+    // might not optimize for memory coalesing
     int blocks,threads;
     CaculateBlockAndThreadNumber(n,blocks,threads);
     GPURelu<<<blocks,threads>>>(d_a,n);
@@ -196,31 +221,33 @@ void CallGPURelu(T *A,int n) {
     cudaFree(d_a);
 }
 #include <curand_kernel.h>
-__global__ void GPUheInit(float* A,int n,int in,ull seed) {
+template <typename T>
+__global__ void GPUheInit(T* __restrict__ A,int n,int in,ull seed) {
     int id = getIDx();
     if (id >=  n)
         return;
     curandState state;
     curand_init(seed,id,0,&state);
-    float randn = curand_normal(&state);
+    T randn = curand_normal(&state);
 
-    float stddev = sqrtf(2.f/ in);
+    T stddev = sqrtf(2.f/ in);
     A[id] = randn * stddev;
 }
-void CallGPUheInit(float* A,int n,int in,ull seed) {
-    float* d_a;
-    cudaMalloc(&d_a,sizeof(float) * n);
-    cudaMemcpy(d_a,A,sizeof(float) * n,cudaMemcpyHostToDevice);
+template <typename T>
+void CallGPUheInit(T* __restrict__ A,int n,int in,ull seed) {
+    T* d_a;
+    cudaMalloc(&d_a,sizeof(T) * n);
+    cudaMemcpy(d_a,A,sizeof(T) * n,cudaMemcpyHostToDevice);
 
     int blocks,threads;
     CaculateBlockAndThreadNumber(n,blocks,threads);
 
     GPUheInit<<<blocks,threads>>>(d_a,n,in,seed);
-    cudaMemcpy(A,d_a,sizeof(float) * n,cudaMemcpyDeviceToHost);
+    cudaMemcpy(A,d_a,sizeof(T) * n,cudaMemcpyDeviceToHost);
     cudaFree(d_a);
 }
 template <typename T>
-__global__ void GPUmaxPooling(T* inputFlatten,T* output,int size3D,int n,int m,int outN,int outM,int size,int stride) {
+__global__ void GPUmaxPooling(T* __restrict__ inputFlatten,T* __restrict__ output,int size3D,int n,int m,int outN,int outM,int size,int stride) {
     // sync for value into share mem
     int ids = getIDx();
     int idx = getIDy();
@@ -250,7 +277,7 @@ __global__ void GPUmaxPooling(T* inputFlatten,T* output,int size3D,int n,int m,i
 }
 
 template <typename T>
-RawMatrixOutput<T> CallGPUmaxPooling(T* A,int size3D,int n,int m,int size,int stride) {
+RawMatrixOutput<T> CallGPUmaxPooling(T* __restrict__ A,int size3D,int n,int m,int size,int stride) {
     T* d_A;
     int len = size3D * n * m;
     cudaMalloc(&d_A,sizeof(T) * len );
@@ -258,6 +285,7 @@ RawMatrixOutput<T> CallGPUmaxPooling(T* A,int size3D,int n,int m,int size,int st
 
     int outN = (n + stride - 1) / stride;
     int outM = (m + stride - 1) / stride;
+
     dim3 blocks,threads;
     Caculate3DBlockAndThread(size3D,outN,outM,blocks,threads);
 
@@ -273,13 +301,13 @@ RawMatrixOutput<T> CallGPUmaxPooling(T* A,int size3D,int n,int m,int size,int st
     return { h_output, size3D, outN, outM };
 }
 template <typename T>
-__global__ void GPUNormalize(T* A,int n,T maxN) {
+__global__ void GPUNormalize(T* __restrict__ A,int n,T maxN) {
     int id = getIDx();
     if (id < n)
         A[id] /= maxN;
 }
 template <typename T>
-void CallGPUNormalize(T* A,int n,T maxN) {
+void CallGPUNormalize(T* __restrict__ A,int n,T maxN) {
     T* d_a;
     cudaMalloc(&d_a,sizeof(T) * n);
     cudaMemcpy(d_a,A,sizeof(T) * n,cudaMemcpyHostToDevice);
@@ -297,7 +325,7 @@ __global__ void GPUapply(T* A,int n,TdeviceFunc f) {
         A[id] = f(A[id]);
 }
 template <typename T,typename TdeviceFunc>
-void CallGPUapply(T* A,int n,TdeviceFunc f) {
+void CallGPUapply(T* __restrict__ A,int n,TdeviceFunc f) {
     T* d_a;
     cudaMalloc(&d_a,sizeof(T) * n);
     cudaMemcpy(d_a,A,sizeof(T) * n,cudaMemcpyHostToDevice);
@@ -309,7 +337,7 @@ void CallGPUapply(T* A,int n,TdeviceFunc f) {
     cudaFree(d_a);
 }
 template <typename T>
-__global__ void GPUTranspose(T* A,int size3D,int n,int m) {
+__global__ void GPUTranspose(T* __restrict__ A,int size3D,int n,int m) {
     int s = getIDx();
     int x = getIDy();
     int y = getIDz();
@@ -318,7 +346,7 @@ __global__ void GPUTranspose(T* A,int size3D,int n,int m) {
     swapDevice(A[s * n * m + x * m + y],A[s * n * m + y * m + x]);
 }
 template <typename T>
-void CallGPUTranspose(T* A,int size3D,int n,int m) {
+void CallGPUTranspose(T* __restrict__ A,int size3D,int n,int m) {
     T* d_a;
     int len = size3D * n * m;
     cudaMalloc(&d_a,sizeof(T) * len);

@@ -17,7 +17,7 @@ namespace TommyDat {
             this->size = size;
         }
         void inference(void *ptr_lastLayerInput) override {
-            Matrix<float>* inputMatrix = static_cast<Matrix<float>*>(ptr_lastLayerInput);
+           Matrix<Tracebackable<float>>* inputMatrix = static_cast<Matrix<Tracebackable<float>>*>(ptr_lastLayerInput);
             auto outputMatrix = inputMatrix->maxPooling(stride,size);
             setNewActivation(outputMatrix);
             if (nextLayer != nullptr)

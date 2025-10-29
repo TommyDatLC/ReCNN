@@ -27,11 +27,10 @@ namespace TommyDat{
             memcpy(matrixFlatten, B.flatten(), sizeof(T) * size3D * n * m);
         }
 
-        Matrix(int size3D,int N,int M,bool heInitRandom = true) {
+        Matrix(int size3D,int N,int M) {
             SetDim(size3D,N,M);
             matrixFlatten = new T[size3D * N * M];
-            if (heInitRandom)
-                heInit();
+            heInit();
         }
         Matrix(int size3D,int N,int M,T val) {
             SetDim(size3D,N,M);
@@ -60,7 +59,7 @@ namespace TommyDat{
 
             int height = img.rows;
             int width  = img.cols;
-            int channels = img.channels();
+            int channels = 3;
 
             if (channels <= 0) {
                 throw std::runtime_error("Image has no channels");
@@ -97,7 +96,7 @@ namespace TommyDat{
                     for (int c = 0; c < width; ++c) {
                         uchar val = rowPtr[c];
                         // index layout: channel-major, then row-major within channel
-                        matrixFlatten[ch * (height * width) + r * width + c] = static_cast<T>(val);
+                        matrixFlatten[ch * (height * width) + r * width + c] = val;
                     }
                 }
             }
@@ -121,14 +120,14 @@ namespace TommyDat{
             return dim3(size3D,n,m);
         }
 
-        Matrix softMax() {
+        Matrix* softMax() {
             T* rawResult = new T[lenFlattenCache];
             memcpy(rawResult,matrixFlatten,sizeof(T) * lenFlattenCache);
             T maxElm = CallGPUmax(rawResult,lenFlattenCache);
             T sum = CallGPUSum(rawResult,lenFlattenCache);
             CallGPUExpMinusMax(rawResult,lenFlattenCache,maxElm);
             CallGPUSoftmax(rawResult,lenFlattenCache,sum);
-            return Matrix(rawResult,size3D,n,m);
+            return new Matrix(rawResult,size3D,n,m);
         }
         Matrix* convolution(Matrix& kernel,int stride = 1) {
             if (kernel.n % 2 == 0 || kernel.m % 2 == 0) {
@@ -169,7 +168,7 @@ namespace TommyDat{
         friend std::ostream& operator<<(std::ostream& os, Matrix& a) {
             os << " size:" << a.size3D << 'x' << a.n << 'x' << a.m << '\n';
             for (int s = 0 ;s < a.size3D;s++) {
-                os << "matrix:" << s ;
+                os << "matrix:" << s << '\n';
                 for (int i = 0; i < a.n; i++) {
                     for (int j = 0; j < a.m; j++) {
                         os << a.get(s,i,j) << " ";
@@ -179,6 +178,8 @@ namespace TommyDat{
             }
             return os;
         }
+
+
         ~Matrix() {
             // when the matrix is free;
             freeArr(matrixFlatten);
@@ -187,6 +188,7 @@ namespace TommyDat{
             CallGPURelu(matrixFlatten,lenFlattenCache);
         }
         void heInit(int LayerSize,ull seed = 123) {
+
             CallGPUheInit(matrixFlatten,lenFlattenCache,LayerSize,seed);
         }
         void heInit(ull seed = 123) {

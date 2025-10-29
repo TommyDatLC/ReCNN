@@ -7,12 +7,12 @@
 #include "NeuralInputBase.h"
 
 namespace TommyDat {
-    class NeuralInput : public NeuralInputBase<Matrix<float>> {
+    class NeuralInput : public NeuralInputBase<Matrix<Tracebackable<float>>> {
     public:
         NeuralInput(std::string path) : NeuralInputBase() {
-            data = new Matrix<float>(path);
+            data = new Matrix<Tracebackable<float>>(path);
             data->normalize();
-            std::cout << "input:\n" << *data;
+            // std::cout << "input:\n" << *data;
         }
     };
 }
