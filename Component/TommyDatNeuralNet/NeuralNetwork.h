@@ -32,17 +32,18 @@ namespace TommyDat {
         }
         void backward() {
             CheckLayersValid();
-
+            // khởi chạy backward
         }
-        // Matrix<float> GetPredictResult() {
-        //
-        // }
+        void GetPredictResult() {
+            int n = layers.size();
+            std::cout << *layers[n - 1]->getActivation();
+        }
         void CaculateError() {
 
         }
     private:
         void CheckLastLayerValid() {
-
+            int n;
         }
         void CheckLayersValid() {
             if (layers.size() == 0) {

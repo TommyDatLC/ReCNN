@@ -5,14 +5,15 @@
 #ifndef RECNN_NEURALINPUT_H
 #define RECNN_NEURALINPUT_H
 #include "NeuralInputBase.h"
-#include "../Kernel3D.h"
-#include <string>
+
 namespace TommyDat {
-    class NeuralInput : public NeuralInputBase<Kernel3D<int>> {
+    class NeuralInput : public NeuralInputBase<Matrix<Tracebackable<float>>> {
     public:
-        NeuralInput(std::string path)  {
-            data = new Kernel3D<int>(path);
-        } ;
+        NeuralInput(std::string path) : NeuralInputBase() {
+            data = new Matrix<Tracebackable<float>>(path);
+            data->normalize();
+            // std::cout << "input:\n" << *data;
+        }
     };
 }
 #endif //RECNN_NEURALINPUT_H

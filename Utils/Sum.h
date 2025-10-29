@@ -9,7 +9,7 @@
 template <typename T>
 __global__ void GPUreduce_sum(T *input,T *output) {
     __shared__ T sdata[1024];
-    int id =  getID();
+    int id =  getIDx();
     int threadID = threadIdx.x;
 
     // copy input len shared memory
@@ -49,7 +49,7 @@ T CallGPUSum(T *input,int length)
 
 template <typename T>
 T CPUsum(T* arr,int len) {
-    T res = 0;
+    T res = 0.0f;
     for (int i =0 ;i < len;i++)
         res += arr[i];
     return res;

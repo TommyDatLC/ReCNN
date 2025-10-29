@@ -6,12 +6,12 @@
 #define RECNN_GPUSOFTMAX_H
 template <typename T>
 __global__ void GPUExpMinusMax(T* input,T max) {
-    int idx = getID();
+    int idx = getIDx();
     input[idx] = expf(input[idx] - max);
 }
 template <typename T>
 __global__ void GPUSoftmax(T* input,T sum) {
-    int idx = getID();
+    int idx = getIDx();
     input[idx] /= sum;
 }
 template <typename T>
