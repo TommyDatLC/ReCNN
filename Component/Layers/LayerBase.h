@@ -10,14 +10,22 @@ namespace TommyDat {
 
     class Layer {
     private:
-        Matrix<Tracebackable<float>>* activation = nullptr;
+        Matrix<Tracebackable<float>>* inActivation = nullptr;
+        Matrix<Tracebackable<float>>* outActivation = nullptr;
     public:
-        void setNewActivation(Matrix<Tracebackable<float>>* newAc) {
-            delete[] activation;
-            activation = newAc;
+        void setOutActivation(Matrix<Tracebackable<float>>* newAc) {
+            delete[] outActivation;
+            outActivation = newAc;
         }
-        Matrix<Tracebackable<float>>* getActivation() {
-            return activation;
+        Matrix<Tracebackable<float>>* getOutActivation() {
+            return outActivation;
+        }
+        void setInActivation(Matrix<Tracebackable<float>>* newAc) {
+            delete[] inActivation;
+            inActivation = newAc;
+        }
+        Matrix<Tracebackable<float>>* getInActivation() {
+            return inActivation;
         }
         void setLastLayer(Layer* newLastLayer) {
             this->lastLayer = newLastLayer;
@@ -28,7 +36,7 @@ namespace TommyDat {
         //Layer* nextLayer
 
         virtual void inference(void* lastLayerInput) = 0;
-        virtual void backward(void* nextLayerInput) = 0;
+        virtual void backward(void* nextLayerInput,float learningRate) = 0;
     protected:
         Layer* nextLayer = nullptr;
         Layer* lastLayer = nullptr;

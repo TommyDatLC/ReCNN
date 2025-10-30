@@ -21,12 +21,19 @@ namespace TommyDat {
            // std::cout << "input matrix \n" << *inputMatrix;
             auto outputMatrix = inputMatrix->maxPooling(size,stride);
           //  std::cout << "output matrix \n" << *outputMatrix;
-            setNewActivation(outputMatrix);
+            setOutActivation(outputMatrix);
             if (nextLayer != nullptr)
                 nextLayer->inference(outputMatrix);
         }
-        void backward(void *nextLayerInput) override {
-
+        // reShape the layer
+        void backward(void *ptr_nextLayerInput,float learningRate) override {
+            Matrix<float>* ptr_nextLayerWeight = static_cast<Matrix<float>*>(ptr_nextLayerInput);
+            dim3 thisActivationDim = getOutActivation()->getDim();
+            ptr_nextLayerWeight->reShape(thisActivationDim.x,thisActivationDim.y,thisActivationDim.z);
+            if (lastLayer != nullptr) {
+                ConvBackwardData backward_data = ConvBackwardData { getOutActivation(),ptr_nextLayerWeight };
+                lastLayer->backward(&backward_data,learningRate);
+            }
         }
     };
 }

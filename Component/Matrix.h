@@ -137,12 +137,14 @@ namespace TommyDat{
             CallGPUSoftmax(rawResult,lenFlattenCache,sum);
             return new Matrix(rawResult,size3D,n,m);
         }
-        Matrix* convolution(Matrix& kernel,int stride = 1) {
-            if (kernel.n % 2 == 0 || kernel.m % 2 == 0) {
+        template <typename Tker>
+        Matrix* convolution(Matrix<Tker>& kernel,int stride = 1) {
+            dim3 dimKer = kernel.getDim();
+            if (dimKer.y % 2 == 0 || dimKer.z % 2 == 0) {
                 throw std::runtime_error("* Cannot process kernel dimemsion % 2 != 1");
             }
-            T* kernelFlatten = kernel.flatten();
-            auto result =  CallGPUConvolution(matrixFlatten,size3D,n,m,kernelFlatten,kernel.size3D,kernel.n,kernel.m,stride);
+            Tker* kernelFlatten = kernel.flatten();
+            auto result =  CallGPUConvolution(matrixFlatten,size3D,n,m,kernelFlatten,dimKer.x,dimKer.y,dimKer.z,stride);
             return new Matrix(result.newRawMatrix,result.Size3D,result.N,result.M);
         }
         Matrix* maxPooling(int size,int stride) {

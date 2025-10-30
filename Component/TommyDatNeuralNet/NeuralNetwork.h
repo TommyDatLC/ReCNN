@@ -14,7 +14,7 @@ namespace TommyDat {
     template <typename TDataInput>
     class NeuralNetwork {
     public:
-
+        float learningRate = 0.001;
         std::vector<Layer*> layers;
         int getSize() {
             return layers.size();
@@ -34,11 +34,13 @@ namespace TommyDat {
         }
         void backward() {
             CheckLayersValid();
+            int n = layers.size();
             // khởi chạy backward
+            //layers[n - 1]->backward(,lr);
         }
         Matrix<Tracebackable<float>>* getPredictResult() {
             int n = layers.size();
-            return layers[n - 1]->getActivation();
+            return layers[n - 1]->getOutActivation();
         }
         float CaculateError() {
             Matrix<Tracebackable<float>>* predRes = getPredictResult();

@@ -21,6 +21,7 @@ add_executable(ReCNN
         Component/Layers/MaxPoolingLayer.h
         Component/NNlayer.h
         Component/Tracebackable.h
+        Component/ConvolutionLayerBackward.h
 )
 
 include_directories(${OpenCV_INCLUDE_DIRS})

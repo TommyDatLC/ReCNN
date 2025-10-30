@@ -17,10 +17,10 @@ namespace TommyDat {
 
     template <typename T>
     struct Tracebackable {
-
+    private:
+        T data = 0;
     public:
-        long long traceBackID = -1;
-
+        dim3 traceBackID;
         // Constructors
         HOST_DEVICE Tracebackable()                 : data(T{}) {}
         HOST_DEVICE Tracebackable(const T& v) : data(v) {}
@@ -30,13 +30,14 @@ namespace TommyDat {
         HOST_DEVICE Tracebackable(Tracebackable&&) noexcept = default;
         HOST_DEVICE Tracebackable& operator=(const Tracebackable&) = default;
         HOST_DEVICE Tracebackable& operator=(Tracebackable&&) noexcept = default;
+        HOST_DEVICE  operator T() const { return data; }
 
         // Gán trực tiếp từ value kiểu T
         HOST_DEVICE Tracebackable& operator=(const T& value) {
             data = value;
             return *this;
         }
-
+        // implicit conversion -> T
         // Getter / Setter
         HOST_DEVICE T get() const { return data; }
         HOST_DEVICE void set(const T& v) { data = v; }
@@ -65,19 +66,18 @@ namespace TommyDat {
         HOST_DEVICE Tracebackable& operator/=(const T& v) { data /= v; return *this; }
 
         // Comparisons
-        HOST_DEVICE bool operator==(const Tracebackable& other) const { return data == other.data; }
-        HOST_DEVICE bool operator!=(const Tracebackable& other) const { return data != other.data; }
-        HOST_DEVICE bool operator<(const Tracebackable& other) const { return data < other.data; }
-        HOST_DEVICE bool operator<=(const Tracebackable& other) const { return data <= other.data; }
-        HOST_DEVICE bool operator>(const Tracebackable& other) const { return data > other.data; }
-        HOST_DEVICE bool operator>=(const Tracebackable& other) const { return data >= other.data; }
+        // HOST_DEVICE bool operator==(const Tracebackable& other) const { return data == other.data; }
+        // HOST_DEVICE bool operator!=(const Tracebackable& other) const { return data != other.data; }
+        // HOST_DEVICE bool operator<(const Tracebackable& other) const { return data < other.data; }
+        // HOST_DEVICE bool operator<=(const Tracebackable& other) const { return data <= other.data; }
+        // HOST_DEVICE bool operator>(const Tracebackable& other) const { return data > other.data; }
+        // HOST_DEVICE bool operator>=(const Tracebackable& other) const { return data >= other.data; }
 
         // Friend declaration for host-only stream output
         friend std::ostream& operator<< (std::ostream& os, const Tracebackable& obj) {
             os << obj.data;
         };
-    private:
-        T data = 0;
+
     };
 
     // Non-member operators to support scalar on left: e.g., 2 + Tracebackable<int>

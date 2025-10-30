@@ -136,13 +136,13 @@ T* CallGPUmatrixBasicOP(const T* __restrict__ A,const T* __restrict__ B,int n,ch
     return h_outp;
 }
 // assume that kernel is small
-template <typename T>
+template <typename T,typename Tker>
 __global__ void GPUConvolution(
     const T* __restrict__ A,
     int size3D,int N,int M,
           T* __restrict__  output,
     int OutputS,int OutputN,int OutputM,
-    const T* __restrict__ kernel,
+    const Tker* __restrict__ kernel,
     int ks,int kn,int km,
     int stride) {
     // Kernel always small so no need to use tile and share memory
@@ -166,18 +166,17 @@ __global__ void GPUConvolution(
             }
     if (idx  <  OutputN && idy < OutputM) {
         int id = ids * OutputN * OutputM + idx * OutputM + idy;
-        int idOffset = ids * N * M + idxOffsetStride * M + idyOffsetStride;
+       // int idOffset = ids * N * M + idxOffsetStride * M + idyOffsetStride;
 
         output[id] = value;
-        // if constexpr (std::is_same_v<T,TommyDat::Tracebackable<float>>) {
-        //     output[id].traceBackID = idOffset;
-        //
-        // }
+        if constexpr (std::is_same_v<T,TommyDat::Tracebackable<float>>) {
+            output[id].traceBackID = { ids ,idx,idy };
+        }
     }
 }
 
-template <typename T>
-RawMatrixOutput<T> CallGPUConvolution(T* A,int size3D,int N,int M,T* kernel,int ks,int kn,int km,int stride) {
+template <typename T,typename Tker>
+RawMatrixOutput<T> CallGPUConvolution(T* A,int size3D,int N,int M,Tker* kernel,int ks,int kn,int km,int stride) {
     int lenKer = kn * km * ks;
     int inChannel = size3D,outChannel = ks;
 
@@ -214,7 +213,7 @@ __global__ void GPURelu(T *A,int n) {
     if (A[id] < 0 && id < n) {
         A[id] = 0;
         if constexpr (std::is_same_v<T,TommyDat::Tracebackable<float>>) {
-              A[id].traceBackID = -1;
+              A[id].traceBackID.x = INT_MAX;
         }
     }
 }
