@@ -14,6 +14,7 @@ namespace TommyDat {
     template <typename TDataInput>
     class NeuralNetwork {
     public:
+
         std::vector<Layer*> layers;
         int getSize() {
             return layers.size();
@@ -26,25 +27,27 @@ namespace TommyDat {
             }
             layers.push_back(layer);
         }
-        void predict(TDataInput input) {
+        void predict(TDataInput* input) {
+            inputedData = input;
             CheckLayersValid();
-            layers[0]->inference( static_cast<void*>( input.data));
+            layers[0]->inference( static_cast<void*>( input->data));
         }
         void backward() {
             CheckLayersValid();
             // khởi chạy backward
         }
-        void GetPredictResult() {
+        Matrix<Tracebackable<float>>* getPredictResult() {
             int n = layers.size();
-            std::cout << *layers[n - 1]->getActivation();
+            return layers[n - 1]->getActivation();
         }
-        void CaculateError() {
-
+        float CaculateError() {
+            Matrix<Tracebackable<float>>* predRes = getPredictResult();
+            Matrix copy_predRes = Matrix(*predRes);
+            return inputedData->getError(&copy_predRes);
         }
     private:
-        void CheckLastLayerValid() {
-            int n;
-        }
+        TDataInput* inputedData = nullptr;
+
         void CheckLayersValid() {
             if (layers.size() == 0) {
                 throw std::runtime_error("network have no layer to process the operation,please add one");

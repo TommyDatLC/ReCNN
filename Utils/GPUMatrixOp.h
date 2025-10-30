@@ -94,18 +94,28 @@ T* CallMatrixMul(const T* A,const T* B,int HangA,int CotA,int CotB) {
     cudaFree(d_outp);
     return h_outp;
 }
+#define MAT_OP_ADD 0
+#define MAT_OP_SUBTRACT 1
+#define MAT_OP_MUL 2
 template <typename T>
-__global__ void MatrixAddOrSub(T* A,const T* B,int n,bool isAdd) {
+__global__ void GPUmatrixBasicOP(T* __restrict__ A,const T* __restrict__ B,int n,char Operation) {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     if (x >= n)
         return;
-    if (isAdd)
-        A[x] += B[x];
-    else
-        A[x] -= B[x];
+    switch (Operation) {
+        case MAT_OP_ADD:
+            A[x] += B[x];
+            break;
+        case MAT_OP_SUBTRACT:
+            A[x] -= B[x];
+            break;
+        case MAT_OP_MUL:
+            A[x] *= B[x];
+
+    }
 }
 template <typename T>
-T* CallMatrixAddOrSub(const T* A,const T* B,int n,bool isAdd) {
+T* CallGPUmatrixBasicOP(const T* __restrict__ A,const T* __restrict__ B,int n,char OP) {
     T* d_A,
      * d_B;
     T* h_outp = new T[n];
@@ -117,7 +127,7 @@ T* CallMatrixAddOrSub(const T* A,const T* B,int n,bool isAdd) {
     cudaMemcpy(d_B,B,allocSize,cudaMemcpyHostToDevice);
     int blocks,threads;
     CaculateBlockAndThreadNumber(n,blocks,threads);
-    MatrixAddOrSub<<<blocks,threads>>>(d_A,d_B,n,isAdd);
+    GPUmatrixBasicOP<<<blocks,threads>>>(d_A,d_B,n,OP);
 
     cudaMemcpy(h_outp,d_A,allocSize,cudaMemcpyDeviceToHost);
     cudaFree(d_A);

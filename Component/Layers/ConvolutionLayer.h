@@ -29,7 +29,7 @@ namespace TommyDat {
                 throw std::runtime_error("outChannel must be a mutiple with inChannel");
             }
             kernelList = new Matrix<Tracebackable<float>>(outChannel,kernelSize,kernelSize);
-           std::cout << "Kernel list \n" << *kernelList;
+           // std::cout << "Kernel list \n" << *kernelList;
         }
 
         void inference(void* ptr_lastLayerInput) override {

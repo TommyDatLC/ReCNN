@@ -111,15 +111,23 @@ namespace TommyDat{
             checkValidID(x,y);
             matrixFlatten[id3d * m * n + x * m + y] = val;
         }
+        void setFlatten(uint id,T val) {
+            matrixFlatten[id] = val;
+        }
 
         T get(uint id3d,uint x,uint y) {
             checkValidID(x,y);
             return matrixFlatten[id3d * m * n + x * m + y];
         }
+        T getFlatten(uint id) {
+            return matrixFlatten[id];
+        }
         dim3 getDim() {
             return dim3(size3D,n,m);
         }
-
+        int getLen() {
+            return lenFlattenCache;
+        }
         Matrix* softMax() {
             T* rawResult = new T[lenFlattenCache];
             memcpy(rawResult,matrixFlatten,sizeof(T) * lenFlattenCache);
@@ -201,6 +209,14 @@ namespace TommyDat{
         void apply(TDeviceFunction deviceFuntion) {
             CallGPUapply(matrixFlatten,lenFlattenCache,deviceFuntion);
         }
+        void log() {
+            apply([] __device__ (T x) {
+                if (x != 0)
+                    return __logf(x.get());
+                else
+                    return 0.f;
+            });
+        }
         void transpose() {
             CallGPUTranspose(matrixFlatten,size3D,n,m);
         }
@@ -208,6 +224,16 @@ namespace TommyDat{
             if (newSize3D * newN * newM != lenFlattenCache)
                 throw std::runtime_error("cannot reshape because the new size not match the old size");
             SetDim(newSize3D,newM,newN);
+        }
+
+        static Matrix* mulUnofficial(Matrix& a,Matrix& b) {
+            dim3 aDim = a.getDim(),
+                bDim = b.getDim();
+            int aLen = aDim.x * aDim.y * aDim.z ;
+            if (aLen!= bDim.x * bDim.y * bDim.z)
+                throw std::runtime_error("Dimension error, cannot mul when the two matrix shape is not match");
+            auto ptr_res = CallGPUmatrixBasicOP(a.flatten(),b.flatten(),aLen,MAT_OP_MUL);
+            return new Matrix(ptr_res,aDim.x,aDim.y,aDim.z);
         }
     private:
         T* matrixFlatten = nullptr;

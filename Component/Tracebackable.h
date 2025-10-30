@@ -17,11 +17,10 @@ namespace TommyDat {
 
     template <typename T>
     struct Tracebackable {
-    private:
-        T data = 0;
 
     public:
         long long traceBackID = -1;
+
         // Constructors
         HOST_DEVICE Tracebackable()                 : data(T{}) {}
         HOST_DEVICE Tracebackable(const T& v) : data(v) {}
@@ -77,7 +76,8 @@ namespace TommyDat {
         friend std::ostream& operator<< (std::ostream& os, const Tracebackable& obj) {
             os << obj.data;
         };
-
+    private:
+        T data = 0;
     };
 
     // Non-member operators to support scalar on left: e.g., 2 + Tracebackable<int>

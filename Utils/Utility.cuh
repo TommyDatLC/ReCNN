@@ -42,10 +42,13 @@ void freeArr(T* arr) {
 }
 
 
-void CaculateBlockAndThreadNumber(int lengthArr,int& block ,int& thread,int numthread = 0) {
+void CaculateBlockAndThreadNumber(int lengthArr,int& block ,int& thread,int numthread = 0,bool forceThread = false) {
     if (!numthread)
         numthread = DEFAULT_KERNEL_SIZE;
-    thread = lengthArr < numthread ? lengthArr : numthread;
+    if (forceThread)
+        thread = numthread;
+    else
+        thread = lengthArr < numthread ? lengthArr : numthread;
     block =  (lengthArr + thread - 1) / thread;
 
 }

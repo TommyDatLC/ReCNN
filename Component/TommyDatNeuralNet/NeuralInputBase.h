@@ -4,12 +4,15 @@
 
 #ifndef RECNN_NEURALINPUTBASE_H
 #define RECNN_NEURALINPUTBASE_H
+#include "../Matrix.h"
+
 namespace TommyDat {
     template <typename Tdata>
     class NeuralInputBase {
     public:
         Tdata* data;
-        int lable;
+        int lable = 1;
+        virtual float getError(void* predictResult) = 0;
     };
 }
 
