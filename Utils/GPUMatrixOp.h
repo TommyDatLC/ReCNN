@@ -170,8 +170,8 @@ __global__ void GPUConvolution(
         output[id] = value;
         if constexpr (std::is_same_v<T,TommyDat::Tracebackable<float>>) {
             output[id].traceBackIDx = ids;
-            output[id].traceBackIDy = idx;
-            output[id].traceBackIDz = idy;
+            output[id].traceBackIDy = idxOffsetStride;
+            output[id].traceBackIDz = idyOffsetStride;
         }
     }
 }

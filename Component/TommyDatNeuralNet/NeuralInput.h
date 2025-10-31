@@ -12,6 +12,7 @@ namespace TommyDat {
         NeuralInput(std::string path) : NeuralInputBase() {
             data = new Matrix<Tracebackable<float>>(path);
             data->normalize();
+
             // std::cout << "input:\n" << *data;
         }
         Matrix<float>* getErrorMatrix(void* lastLayerActivation) override {

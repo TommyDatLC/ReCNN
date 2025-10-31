@@ -30,7 +30,7 @@ int main() {
     // cout << "output \n" << *a.convolution(ker);
 
     NeuralNetwork<NeuralInput> net;
-    net.learningRate = 0.01f;
+    net.learningRate = 10.f;
     auto layer1 = ConvolutionLayer(3,6,3,2);
     auto layer2 = MaxPoolingLayer(2,2);
     net.add(&layer1);

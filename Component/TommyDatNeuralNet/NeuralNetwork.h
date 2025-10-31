@@ -14,7 +14,7 @@ namespace TommyDat {
     template <typename TDataInput>
     class NeuralNetwork {
     public:
-        float learningRate = 0.001;
+        float learningRate = 0.001f;
         std::vector<Layer*> layers;
         int getSize() {
             return layers.size();

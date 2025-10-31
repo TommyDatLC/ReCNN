@@ -46,11 +46,13 @@ namespace TommyDat {
         void backward(void* ptr_nextLayerInput,float leaningRate) override {
             ConvBackwardData* ptr_nextLayer = static_cast<ConvBackwardData*>(ptr_nextLayerInput);
             float* ptr_newWeightRaw = CallGPUConvBackward(ptr_nextLayer->ptr_nextLayerPixelAffect->flatten(),getInActivation()->flatten(),ptr_nextLayer->weight->flatten(),kernelList->flatten(),
-                getInActivation()->getDim() ,ptr_nextLayer->weight->getDim(),inChannel,kernelSize,leaningRate);
+                getInActivation()->getDim() ,ptr_nextLayer->weight->getDim(),
+                inChannel,kernelSize,leaningRate);
             dim3 inputMatrixDim = getInActivation()->getDim();
             Matrix newWeightMat = Matrix(ptr_newWeightRaw,inputMatrixDim);
-            std::cout << newWeightMat << *kernelList;
-
+            std::cout << *getInActivation() << "weight:\n" << *ptr_nextLayer->weight << "newWeight:\n" << newWeightMat << "new Ker\n" << *kernelList;
+            // 0:2:2
+            //
             if (lastLayer != nullptr)
                 lastLayer->backward(&newWeightMat,leaningRate);
         }

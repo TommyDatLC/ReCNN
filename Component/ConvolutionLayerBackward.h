@@ -12,7 +12,8 @@ struct ConvBackwardData {
 };
 // TracebackWeight
 template <typename T,typename TAffect = Tracebackable<T>>
-__global__ void GPUConvBackward(TAffect* pixelAffected,TAffect* convInp,T* WeightFromNextLayer,T* kernelWeight,
+__global__ void GPUConvBackward(TAffect* pixelAffected,TAffect* convInp,T* WeightFromNextLayer,
+    T* kernelWeight,T* outputKernelWeight,
     dim3 convInpDim,dim3 weightFromNextLayerDim,
 int inChannel,int kerSize,float learningRate,
 T* outputWeight) {
@@ -23,7 +24,7 @@ T* outputWeight) {
 
         return;
     int idPixelAffect = ids * weightFromNextLayerDim.y * weightFromNextLayerDim.z + idx * weightFromNextLayerDim.z + idy;
-    int thisWeight = WeightFromNextLayer[idPixelAffect];
+    T thisWeight = WeightFromNextLayer[idPixelAffect];
     auto pixelAffect = pixelAffected[idPixelAffect];
     short pixelAffectx = pixelAffect.traceBackIDx;
     short pixelAffecty = pixelAffect.traceBackIDy;
@@ -40,10 +41,10 @@ T* outputWeight) {
                 break;
             // bat dau tinh toan
             int idKernel = pixelAffectx * kerSize * kerSize + i * kerSize + j;
-            int idActvation = (pixelAffectx % inChannel) * convInpDim.x * convInpDim.y  + idxOffset * convInpDim.y + idyOffset;
+            int idActvation = (pixelAffectx % inChannel) * convInpDim.y * convInpDim.z  + idxOffset * convInpDim.z + idyOffset;
             T oldKernel = kernelWeight[idKernel];
-            kernelWeight[idKernel] -= learningRate * thisWeight *  convInp[idActvation];
-            outputWeight[idActvation] += convInp[idActvation] - learningRate * oldKernel * thisWeight;
+            atomicAdd(&outputKernelWeight[idKernel], -learningRate * thisWeight *  convInp[idActvation]);
+            atomicAdd(&outputWeight[idActvation],learningRate * oldKernel * thisWeight);
         }
     }
 }
@@ -53,25 +54,30 @@ T* CallGPUConvBackward(TAffect* pixelAffected,TAffect* convInp,T* weightFromNext
 int inChannel,int kerSize,float learningRate
 ) {
     int convInpLen = convInpDim.x * convInpDim.y * convInpDim.z;
-    T* d_outputWeight;
     T* h_outputWeight = new T[convInpLen];
-    cudaMalloc(&d_outputWeight, sizeof(T) * convInpLen);
+    for (int i = 0;i < convInpLen;i++) {
+        h_outputWeight[i] = 0;
+    }
+    T* d_outputWeight = MallocAndCopyToDevice(h_outputWeight,convInpLen);
     TAffect* d_pixelAffected =  MallocAndCopyToDevice(pixelAffected,weightFromNextLayerDim);
     TAffect* d_convInp = MallocAndCopyToDevice(convInp,convInpDim);
     T* d_weightFromNextLayer = MallocAndCopyToDevice(weightFromNextLayer,weightFromNextLayerDim);
 
-    int KernelLen = weightFromNextLayerDim.x * kerSize * kerSize;
+    int KernelLen = weightFromNextLayerDim.x * kerSize * kerSize ;
     T* d_kernelWeight = MallocAndCopyToDevice(kernelWeight,KernelLen);
+    T* d_outputKernel = MallocAndCopyToDevice(kernelWeight,KernelLen);
 
     dim3 blocks,threads;
-    Caculate3DBlockAndThread(convInpDim,blocks,threads );
+    Caculate3DBlockAndThread(weightFromNextLayerDim,blocks,threads );
     CUDA_CHECK(cudaGetLastError());
-    GPUConvBackward<<<blocks,threads>>>(d_pixelAffected,d_convInp,d_weightFromNextLayer,d_kernelWeight,
+
+    GPUConvBackward<<<blocks,threads>>>(d_pixelAffected,d_convInp,d_weightFromNextLayer,
+        d_kernelWeight,d_outputKernel,
         convInpDim,weightFromNextLayerDim,
         inChannel,kerSize,learningRate,
         d_outputWeight);
     CopyToHost(h_outputWeight,d_outputWeight,convInpLen);
-    CopyToHost(kernelWeight,d_kernelWeight,KernelLen);
+    CopyToHost(kernelWeight,d_outputKernel,KernelLen);
     cudaFree(d_convInp);
     cudaFree(d_kernelWeight);
     cudaFree(d_pixelAffected);
