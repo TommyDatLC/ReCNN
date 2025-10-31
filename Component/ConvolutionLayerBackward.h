@@ -19,26 +19,31 @@ T* outputWeight) {
     int ids = getIDx();
     int idx = getIDy();
     int idy = getIDz();
-    if (ids >= convInpDim.x || idx >= convInpDim.y || idy >= convInpDim.z)
+    if (ids >= weightFromNextLayerDim.x || idx >= weightFromNextLayerDim.y || idy >= weightFromNextLayerDim.z)
+
         return;
-    int thisWeight = WeightFromNextLayer[ids * kerSize * kerSize + idx * kerSize + idy];
-    dim3 pixelAffectId = pixelAffected[ids * kerSize * kerSize + idx * kerSize + idy].traceBackID;
-    if (pixelAffectId.x == INT_MAX) // Cannot traceback (while using relu...)
+    int idPixelAffect = ids * weightFromNextLayerDim.y * weightFromNextLayerDim.z + idx * weightFromNextLayerDim.z + idy;
+    int thisWeight = WeightFromNextLayer[idPixelAffect];
+    auto pixelAffect = pixelAffected[idPixelAffect];
+    short pixelAffectx = pixelAffect.traceBackIDx;
+    short pixelAffecty = pixelAffect.traceBackIDy;
+    short pixelAffectz = pixelAffect.traceBackIDz;
+    if (pixelAffectx == -1) // Cannot traceback (while using relu...)
         return;
     for (int i = 0;i < kerSize;i++) {
-        int idxOffset = (pixelAffectId.y - kerSize / 2 + i);
-        if (idxOffset > convInpDim.y)
+        int idxOffset = (pixelAffecty - kerSize / 2 + i);
+        if (idxOffset >= convInpDim.y)
             break;
         for (int j = 0;j < kerSize;j++) {
-            int idyOffset  = pixelAffectId.z - kerSize / 2 + j;
-            if (idyOffset > convInpDim.z)
+            int idyOffset  = pixelAffectz - kerSize / 2 + j;
+            if (idyOffset >= convInpDim.z)
                 break;
             // bat dau tinh toan
-            int idKernel = pixelAffectId.x * kerSize * kerSize + i * kerSize + j;
-            int idActvation = (pixelAffectId.x % inChannel) * convInpDim.x * convInpDim.y  + idxOffset * convInpDim.y + idyOffset;
+            int idKernel = pixelAffectx * kerSize * kerSize + i * kerSize + j;
+            int idActvation = (pixelAffectx % inChannel) * convInpDim.x * convInpDim.y  + idxOffset * convInpDim.y + idyOffset;
             T oldKernel = kernelWeight[idKernel];
             kernelWeight[idKernel] -= learningRate * thisWeight *  convInp[idActvation];
-            outputWeight[idActvation] = convInp[idActvation] - learningRate * oldKernel * thisWeight;
+            outputWeight[idActvation] += convInp[idActvation] - learningRate * oldKernel * thisWeight;
         }
     }
 }
@@ -50,16 +55,27 @@ int inChannel,int kerSize,float learningRate
     int convInpLen = convInpDim.x * convInpDim.y * convInpDim.z;
     T* d_outputWeight;
     T* h_outputWeight = new T[convInpLen];
-    cudaMalloc(&d_outputWeight, sizeof(TAffect) * convInpLen);
+    cudaMalloc(&d_outputWeight, sizeof(T) * convInpLen);
     TAffect* d_pixelAffected =  MallocAndCopyToDevice(pixelAffected,weightFromNextLayerDim);
     TAffect* d_convInp = MallocAndCopyToDevice(convInp,convInpDim);
     T* d_weightFromNextLayer = MallocAndCopyToDevice(weightFromNextLayer,weightFromNextLayerDim);
-    T* d_kernelWeight = MallocAndCopyToDevice(kernelWeight,weightFromNextLayerDim.x * kerSize * kerSize);
+
+    int KernelLen = weightFromNextLayerDim.x * kerSize * kerSize;
+    T* d_kernelWeight = MallocAndCopyToDevice(kernelWeight,KernelLen);
 
     dim3 blocks,threads;
     Caculate3DBlockAndThread(convInpDim,blocks,threads );
-    GPUConvBackward<<<blocks,threads>>>(d_pixelAffected,d_convInp,d_weightFromNextLayer,d_kernelWeight,convInpDim,weightFromNextLayerDim,inChannel,kerSize,learningRate,d_outputWeight);
+    CUDA_CHECK(cudaGetLastError());
+    GPUConvBackward<<<blocks,threads>>>(d_pixelAffected,d_convInp,d_weightFromNextLayer,d_kernelWeight,
+        convInpDim,weightFromNextLayerDim,
+        inChannel,kerSize,learningRate,
+        d_outputWeight);
     CopyToHost(h_outputWeight,d_outputWeight,convInpLen);
+    CopyToHost(kernelWeight,d_kernelWeight,KernelLen);
+    cudaFree(d_convInp);
+    cudaFree(d_kernelWeight);
+    cudaFree(d_pixelAffected);
+    cudaFree(d_weightFromNextLayer);
     return h_outputWeight;
 }
 #endif //RECNN_CONVOLUTIONLAYERBACKWARDDATA_H

@@ -20,7 +20,9 @@ namespace TommyDat {
     private:
         T data = 0;
     public:
-        dim3 traceBackID;
+        short traceBackIDx;
+        short traceBackIDy;
+        short traceBackIDz;
         // Constructors
         HOST_DEVICE Tracebackable()                 : data(T{}) {}
         HOST_DEVICE Tracebackable(const T& v) : data(v) {}
@@ -30,7 +32,7 @@ namespace TommyDat {
         HOST_DEVICE Tracebackable(Tracebackable&&) noexcept = default;
         HOST_DEVICE Tracebackable& operator=(const Tracebackable&) = default;
         HOST_DEVICE Tracebackable& operator=(Tracebackable&&) noexcept = default;
-        HOST_DEVICE  operator T() const { return data; }
+        HOST_DEVICE operator T() const { return data; }
 
         // Gán trực tiếp từ value kiểu T
         HOST_DEVICE Tracebackable& operator=(const T& value) {
@@ -76,6 +78,7 @@ namespace TommyDat {
         // Friend declaration for host-only stream output
         friend std::ostream& operator<< (std::ostream& os, const Tracebackable& obj) {
             os << obj.data;
+            //   os << obj.traceBackIDx << ":" << obj.traceBackIDy << ":" << obj.traceBackIDz << " ";
         };
 
     };

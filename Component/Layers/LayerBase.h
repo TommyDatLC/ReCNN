@@ -4,24 +4,30 @@
 
 #ifndef RECNN_LAYERBASE_H
 #define RECNN_LAYERBASE_H
+
+#include "../Matrix.h"
+#include "../Matrix.h"
 #include "../Tracebackable.h"
 
 namespace TommyDat {
 
-    class Layer {
+    struct Layer {
     private:
+
         Matrix<Tracebackable<float>>* inActivation = nullptr;
         Matrix<Tracebackable<float>>* outActivation = nullptr;
+
     public:
         void setOutActivation(Matrix<Tracebackable<float>>* newAc) {
-            delete[] outActivation;
+            delete outActivation;
             outActivation = newAc;
+
         }
         Matrix<Tracebackable<float>>* getOutActivation() {
             return outActivation;
         }
         void setInActivation(Matrix<Tracebackable<float>>* newAc) {
-            delete[] inActivation;
+            delete inActivation;
             inActivation = newAc;
         }
         Matrix<Tracebackable<float>>* getInActivation() {

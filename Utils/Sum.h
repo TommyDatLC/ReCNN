@@ -6,6 +6,7 @@
 #define RECNN_SUM_H
 #include "Utility.cuh"
 
+
 template <typename T>
 __global__ void GPUreduce_sum(T *input,T *output,int len) {
     __shared__ T sdata[1024];
@@ -30,25 +31,24 @@ __global__ void GPUreduce_sum(T *input,T *output,int len) {
         output[blockIdx.x] = sdata[0];
 }
 
-template <typename T>
+template <typename T >
 T CallGPUSum(T *input,int length)
 {
 
-    T *d_input,*d_output;
     T *h_output = new T[length];
     int outputLength = length;
-    cudaMalloc(&d_input,sizeof(T) * length);
-    cudaMemcpy(d_input,input,sizeof(T) * length,cudaMemcpyHostToDevice);
+    T *d_input = MallocAndCopyToDevice(input,length);
+    T *d_output;
     cudaMalloc(&d_output,sizeof(T) * length);
-    int blocks = length,thread ;
 
-    CaculateBlockAndThreadNumber(outputLength,blocks,thread,1024,true);
+    int thread = 1024;
+    int blocks = (length + thread - 1) / thread;
+    //CaculateBlockAndThreadNumber(outputLength,blocks,thread);
     GPUreduce_sum<<< blocks , thread>>>(d_input,d_output,outputLength);
     CUDA_CHECK(cudaGetLastError());
     outputLength = blocks;
 
-
-    cudaMemcpy(h_output,d_output,sizeof(T) ,cudaMemcpyDeviceToHost);
+    CopyToHost(h_output,d_output,length);
     cudaFree(d_input);
     cudaFree(d_output);
 

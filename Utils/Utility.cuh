@@ -45,17 +45,16 @@ void freeArr(T *arr) {
 }
 template<typename T>
 void CopyToDevice(T* ptr_host,T* ptr_device,int size) {
-    cudaMemcpy(ptr_device, ptr_host, sizeof(T) * size, cudaMemcpyHostToDevice);
+    cudaMemcpy( ptr_device, ptr_host, sizeof(T) * size, cudaMemcpyHostToDevice);
 }
 template<typename T>
 void CopyToHost(T* ptr_host,T* ptr_device,int size) {
-    cudaMemcpy(ptr_device, ptr_host, sizeof(T) * size, cudaMemcpyDeviceToHost);
+    cudaMemcpy(ptr_host , ptr_device, sizeof(T) * size, cudaMemcpyDeviceToHost);
 }
 template<typename T>
-T *MallocAndCopyToDevice(T *ptr_host, int size) {
-    T *ptr_device;
+T* MallocAndCopyToDevice(T* ptr_host, int size) {
+    T *ptr_device ;
     cudaMalloc(&ptr_device, sizeof(T) * size);
-    cudaMemcpy(ptr_device, ptr_host, sizeof(T) * size, cudaMemcpyHostToDevice);
     CopyToDevice(ptr_host,ptr_device,size);
     return ptr_device;
 }
@@ -66,11 +65,9 @@ T *MallocAndCopyToDevice(T *ptr_host, dim3 size) {
     return MallocAndCopyToDevice(ptr_host, len);
 }
 
-void CaculateBlockAndThreadNumber(int lengthArr, int &block, int &thread, int numthread = 0, bool forceThread = false) {
+void CaculateBlockAndThreadNumber(int lengthArr, int &block, int &thread,int numthread = 0) {
     if (!numthread)
-        numthread = DEFAULT_KERNEL_SIZE;
-    if (forceThread)
-        thread = numthread;
+        thread = DEFAULT_KERNEL_SIZE;
     else
         thread = lengthArr < numthread ? lengthArr : numthread;
     block = (lengthArr + thread - 1) / thread;
@@ -91,6 +88,7 @@ struct RawMatrixOutput {
     T *newRawMatrix;
     int Size3D, N, M;
 };
+
 
 // trả về số channel
 #endif //RECNN_UTILITY_CUH

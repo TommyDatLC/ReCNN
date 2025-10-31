@@ -35,8 +35,10 @@ namespace TommyDat {
         void backward() {
             CheckLayersValid();
             int n = layers.size();
+            Matrix<Tracebackable<float>>* predRes = getPredictResult();
+            Matrix<float>* error =  inputedData->getErrorMatrix(predRes);
             // khởi chạy backward
-            //layers[n - 1]->backward(,lr);
+            layers[n - 1]->backward(error,learningRate);
         }
         Matrix<Tracebackable<float>>* getPredictResult() {
             int n = layers.size();
@@ -44,9 +46,9 @@ namespace TommyDat {
         }
         float CaculateError() {
             Matrix<Tracebackable<float>>* predRes = getPredictResult();
-            Matrix copy_predRes = Matrix(*predRes);
-            return inputedData->getError(&copy_predRes);
+            return inputedData->getError(predRes);
         }
+
     private:
         TDataInput* inputedData = nullptr;
 
@@ -56,6 +58,7 @@ namespace TommyDat {
             }
         }
     };
+
 
 }
 #endif //RECNN_NEURALNETWORK_H

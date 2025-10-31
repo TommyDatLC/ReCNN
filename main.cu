@@ -1,10 +1,11 @@
 #include <iostream>
-
-#include "Component/TommyDatNeuralNet/NeuralNetwork.h"
 #include "Component/Matrix.h"
 #include "Component/Layers/ConvolutionLayer.h"
 #include "Component/Layers/MaxPoolingLayer.h"
 #include "Component/TommyDatNeuralNet/NeuralInput.h"
+#include "Component/TommyDatNeuralNet/NeuralNetwork.h"
+
+
 using namespace std;
 using namespace TommyDat;
 
@@ -12,9 +13,14 @@ using namespace TommyDat;
 // make a class to backtracing
 // checking the he init why always random
 int main() {
+
     //
-    // Matrix a = Matrix<float>(1,10,10,-0.000000000001f);
-    // a.set(0,0,0,1);
+    // Matrix ker = Matrix<float>(6,3,3,1);
+    // Matrix a = Matrix<float>(3,5,5,0.2);
+    // auto out = a.convolution(ker,1);
+    // cout << *out;
+    //
+    //     cout <<  (Tracebackable<float>(4) += 4);
     // cout << a;
     //
     //  cout << "before:\n" << a << '\n';
@@ -32,7 +38,6 @@ int main() {
     NeuralInput n = NeuralInput("./testdata1.png");
     net.predict(&n);
     auto predictRes = net.getPredictResult();
-    float err = net.CaculateError();
-    cout << err;
-    // return 0;
+    net.backward();
+    return 0;
 }

@@ -30,7 +30,7 @@ namespace TommyDat {
                 throw std::runtime_error("outChannel must be a mutiple with inChannel");
             }
             kernelList = new Matrix<float>(outChannel,kernelSize,kernelSize);
-           // std::cout << "Kernel list \n" << *kernelList;
+           std::cout << "Kernel list before \n" << *kernelList;
         }
 
         void inference(void* ptr_lastLayerInput) override {
@@ -45,8 +45,14 @@ namespace TommyDat {
         }
         void backward(void* ptr_nextLayerInput,float leaningRate) override {
             ConvBackwardData* ptr_nextLayer = static_cast<ConvBackwardData*>(ptr_nextLayerInput);
-            CallGPUConvBackward(ptr_nextLayer->ptr_nextLayerPixelAffect->flatten(),getInActivation()->flatten(),ptr_nextLayer->weight->flatten(),kernelList->flatten(),
+            float* ptr_newWeightRaw = CallGPUConvBackward(ptr_nextLayer->ptr_nextLayerPixelAffect->flatten(),getInActivation()->flatten(),ptr_nextLayer->weight->flatten(),kernelList->flatten(),
                 getInActivation()->getDim() ,ptr_nextLayer->weight->getDim(),inChannel,kernelSize,leaningRate);
+            dim3 inputMatrixDim = getInActivation()->getDim();
+            Matrix newWeightMat = Matrix(ptr_newWeightRaw,inputMatrixDim);
+            std::cout << newWeightMat << *kernelList;
+
+            if (lastLayer != nullptr)
+                lastLayer->backward(&newWeightMat,leaningRate);
         }
         ~ConvolutionLayer() {
             delete kernelList;

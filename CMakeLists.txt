@@ -22,12 +22,14 @@ add_executable(ReCNN
         Component/NNlayer.h
         Component/Tracebackable.h
         Component/ConvolutionLayerBackward.h
+        Component/TommyDatNeuralNet/NeuralInput.h
+        Utils/stbImage.h
+
 )
 
-include_directories(${OpenCV_INCLUDE_DIRS})
-find_package(OpenCV REQUIRED)
+
 set_target_properties(ReCNN PROPERTIES
         CUDA_SEPARABLE_COMPILATION ON)
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --extended-lambda")
-target_link_libraries(ReCNN ${OpenCV_LIBS})
+
 file(COPY testdata1.png DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
