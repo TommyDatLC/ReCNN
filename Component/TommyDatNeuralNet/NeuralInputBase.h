@@ -11,9 +11,9 @@ namespace TommyDat {
     class NeuralInputBase {
     public:
         Tdata* data;
-        int lable = 1;
+        int lable = 5;
         virtual float getError(void* predictResult) = 0;
-        virtual Matrix<float>* getErrorMatrix(void* lastLayerActivation) = 0;
+        virtual Matrix<float>* getGradientMatrix(void* lastLayerActivation) = 0;
     };
 }
 

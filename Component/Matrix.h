@@ -126,6 +126,8 @@ namespace TommyDat{
                 return matrixFlatten[id3d * m * n + x * m + y];
             }
             T getFlatten(uint id) {
+                if (id >= lenFlattenCache)
+                    throw std::runtime_error("Out of bound");
                 return matrixFlatten[id];
             }
             dim3 getDim() {
@@ -138,8 +140,8 @@ namespace TommyDat{
                 T* rawResult = new T[lenFlattenCache];
                 memcpy(rawResult,matrixFlatten,sizeof(T) * lenFlattenCache);
                 T maxElm = CallGPUmax(rawResult,lenFlattenCache);
-                T sum = CallGPUSum(rawResult,lenFlattenCache);
                 CallGPUExpMinusMax(rawResult,lenFlattenCache,maxElm);
+                T sum = CallGPUSum(rawResult,lenFlattenCache);
                 CallGPUSoftmax(rawResult,lenFlattenCache,sum);
                 return new Matrix(rawResult,size3D,n,m);
             }

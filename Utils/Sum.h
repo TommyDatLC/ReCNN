@@ -14,8 +14,8 @@ __global__ void GPUreduce_sum(T *input,T *output,int len) {
     int lId = threadIdx.x;
 
     // copy input len shared memory
-    if (lId >=  len)
-        sdata[lId] = (T)0;
+    if (id >=  len)
+        sdata[lId] = 0;
     else
         sdata[lId] = input[id];
     __syncthreads();
@@ -39,14 +39,18 @@ T CallGPUSum(T *input,int length)
     int outputLength = length;
     T *d_input = MallocAndCopyToDevice(input,length);
     T *d_output;
-    cudaMalloc(&d_output,sizeof(T) * length);
+    CUDA_CHECK(cudaMalloc(&d_output,sizeof(T) * length));
 
     int thread = 1024;
-    int blocks = (length + thread - 1) / thread;
-    //CaculateBlockAndThreadNumber(outputLength,blocks,thread);
-    GPUreduce_sum<<< blocks , thread>>>(d_input,d_output,outputLength);
-    CUDA_CHECK(cudaGetLastError());
-    outputLength = blocks;
+    while (outputLength > 1) {
+        int blocks = (length + thread - 1) / thread;
+        if (outputLength != length)
+            std::swap(d_output,d_input);
+        CaculateBlockAndThreadNumber(outputLength,blocks,thread);
+        GPUreduce_sum<<< blocks , thread>>>(d_input,d_output,outputLength);
+        CUDA_CHECK(cudaGetLastError());
+        outputLength = blocks;
+    }
 
     CopyToHost(h_output,d_output,length);
     cudaFree(d_input);

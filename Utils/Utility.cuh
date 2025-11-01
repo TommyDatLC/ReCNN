@@ -13,7 +13,7 @@ const int DEFAULT_KERNEL_SIZE = 1024;
     if (e != cudaSuccess) { \
         std::cerr << "CUDA error " << __FILE__ << ":" << __LINE__ << " -> " \
         << cudaGetErrorString(e) << " (" << e << ")\n"; \
-        std::exit(EXIT_FAILURE); \
+       \
     } \
 } while(0)
 __device__ int getIDx() {
@@ -53,8 +53,8 @@ void CopyToHost(T* ptr_host,T* ptr_device,int size) {
 }
 template<typename T>
 T* MallocAndCopyToDevice(T* ptr_host, int size) {
-    T *ptr_device ;
-    cudaMalloc(&ptr_device, sizeof(T) * size);
+    T *ptr_device = nullptr;
+    CUDA_CHECK(cudaMalloc(&ptr_device, sizeof(T) * size));
     CopyToDevice(ptr_host,ptr_device,size);
     return ptr_device;
 }

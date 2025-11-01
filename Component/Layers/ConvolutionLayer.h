@@ -30,7 +30,7 @@ namespace TommyDat {
                 throw std::runtime_error("outChannel must be a mutiple with inChannel");
             }
             kernelList = new Matrix<float>(outChannel,kernelSize,kernelSize);
-           std::cout << "Kernel list before \n" << *kernelList;
+          // std::cout << "Kernel list before \n" << *kernelList;
         }
 
         void inference(void* ptr_lastLayerInput) override {
@@ -43,14 +43,17 @@ namespace TommyDat {
             if (nextLayer != nullptr)
                 nextLayer->inference(output);
         }
+        void printWeight() {
+            std::cout << "Kernel list \n" << *kernelList;
+        }
         void backward(void* ptr_nextLayerInput,float leaningRate) override {
             ConvBackwardData* ptr_nextLayer = static_cast<ConvBackwardData*>(ptr_nextLayerInput);
-            float* ptr_newWeightRaw = CallGPUConvBackward(ptr_nextLayer->ptr_nextLayerPixelAffect->flatten(),getInActivation()->flatten(),ptr_nextLayer->weight->flatten(),kernelList->flatten(),
-                getInActivation()->getDim() ,ptr_nextLayer->weight->getDim(),
+            float* ptr_newWeightRaw = CallGPUConvBackward(ptr_nextLayer->ptr_nextLayerPixelAffect->flatten(),getInActivation()->flatten(),ptr_nextLayer->gradient->flatten(),kernelList->flatten(),
+                getInActivation()->getDim() ,ptr_nextLayer->gradient->getDim(),
                 inChannel,kernelSize,leaningRate);
             dim3 inputMatrixDim = getInActivation()->getDim();
             Matrix newWeightMat = Matrix(ptr_newWeightRaw,inputMatrixDim);
-            std::cout << *getInActivation() << "weight:\n" << *ptr_nextLayer->weight << "newWeight:\n" << newWeightMat << "new Ker\n" << *kernelList;
+            //std::cout << *getInActivation() << "weight:\n" << *ptr_nextLayer->weight << "newWeight:\n" << newWeightMat << "new Ker\n" << *kernelList;
             // 0:2:2
             //
             if (lastLayer != nullptr)

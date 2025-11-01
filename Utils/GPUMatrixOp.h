@@ -204,16 +204,17 @@ RawMatrixOutput<T> CallGPUConvolution(T* __restrict__ A
                                         stride);
 
     cudaDeviceSynchronize();
-    CUDA_CHECK(cudaGetLastError());
     CopyToHost(h_output,d_output,lenOutput);
     cudaFree(d_A);
     cudaFree(d_kernel);
+    cudaFree(d_output);
     return { h_output,outputS,outputN,outputM };
 }
 template <typename T>
 __global__ void GPURelu(T *A,int n) {
     int id = getIDx();
-    if (A[id] < 0 && id < n) {
+    if (id >= n) return;
+    if (A[id] < 0) {
         A[id] = 0;
         if constexpr (std::is_same_v<T,TommyDat::Tracebackable<float>>) {
               A[id].traceBackIDx = -1;

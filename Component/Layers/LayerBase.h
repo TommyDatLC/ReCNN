@@ -19,14 +19,17 @@ namespace TommyDat {
 
     public:
         void setOutActivation(Matrix<Tracebackable<float>>* newAc) {
+            if (newAc == outActivation)
+                return;
             delete outActivation;
             outActivation = newAc;
-
         }
         Matrix<Tracebackable<float>>* getOutActivation() {
             return outActivation;
         }
         void setInActivation(Matrix<Tracebackable<float>>* newAc) {
+            if (newAc == inActivation)
+                return;
             delete inActivation;
             inActivation = newAc;
         }

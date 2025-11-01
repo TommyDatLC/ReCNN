@@ -15,30 +15,37 @@ namespace TommyDat {
 
             // std::cout << "input:\n" << *data;
         }
-        Matrix<float>* getErrorMatrix(void* lastLayerActivation) override {
+        Matrix<float>* getGradientMatrix(void* lastLayerActivation) override {
             Matrix<Tracebackable<float>>* predictResultMatrix = static_cast<Matrix<Tracebackable<float>>*>(lastLayerActivation);
             dim3 predictResultMatrixDim = predictResultMatrix->getDim();
+            auto predictSoftMax = predictResultMatrix->softMax();
             Matrix labelMatrix = Matrix(predictResultMatrixDim,0.f);
             labelMatrix.setFlatten(lable,-1.f);
-            Matrix<float>* result =  labelMatrix + *predictResultMatrix;
+            Matrix<float>* result =  labelMatrix + *predictSoftMax;
+
             return result;
         }
         float getError(void *predictResult) override {
-            Matrix<Tracebackable<float>>* predictResultMatrix = static_cast<Matrix<Tracebackable<float>>*>(predictResult);
+           Matrix<Tracebackable<float>>* predictResultMatrix = static_cast<Matrix<Tracebackable<float>>*>(predictResult);
 
-            Matrix<float> predictResultValueMatrix = toValueMatrix<float>(*predictResultMatrix);
-            dim3 predictResultMatrixDim = predictResultValueMatrix.getDim();
-            Matrix labelMatrix = Matrix(predictResultMatrixDim,0.f);
-            labelMatrix.setFlatten(lable,1.f);
-            predictResultMatrix->log();
-            auto ptr_afterMul =  mulUnofficial(labelMatrix,predictResultValueMatrix);
-           // std::cout << *ptr_afterMul;
-            // std::cout << *ptr_afterMul;
-            float res = CallGPUSum(ptr_afterMul->flatten(),predictResultMatrixDim.x * predictResultMatrixDim.y * predictResultMatrixDim.z);
-            delete ptr_afterMul;
+           Matrix<float> predictResultValueMatrix = toValueMatrix<float>(*predictResultMatrix);
+            auto predictSoftMax = predictResultMatrix->softMax();
+
+           //  dim3 predictResultMatrixDim = predictResultValueMatrix.getDim();
+           //  Matrix labelMatrix = Matrix(predictResultMatrixDim,0.f);
+           //  labelMatrix.setFlatten(lable,1.f);
+           //  predictResultMatrix->log();
+           //  auto ptr_afterMul =  mulUnofficial(labelMatrix,predictResultValueMatrix);
+           // // std::cout << *ptr_afterMul;
+           //  // std::cout << *ptr_afterMul;
+           //  float res = CallGPUSum(ptr_afterMul->flatten(),predictResultMatrixDim.x * predictResultMatrixDim.y * predictResultMatrixDim.z);
+           //  delete ptr_afterMul;
+           //  return res;
+         //  std::cout << predictSoftMax->getFlatten(lable) << '\n';
+            float res = -logf( predictSoftMax->getFlatten(lable));
+            delete predictSoftMax;
             return res;
         }
-            // return -logf( predictResultMatrix->getFlatten(lable).get());
     };
 }
 #endif RECNN_NEURALINPUT_H

@@ -8,23 +8,23 @@
 using namespace TommyDat;
 struct ConvBackwardData {
     Matrix<Tracebackable<float>>* ptr_nextLayerPixelAffect = nullptr;
-    Matrix<float>* weight = nullptr;
+    Matrix<float>* gradient = nullptr;
 };
 // TracebackWeight
 template <typename T,typename TAffect = Tracebackable<T>>
-__global__ void GPUConvBackward(TAffect* pixelAffected,TAffect* convInp,T* WeightFromNextLayer,
+__global__ void GPUConvBackward(TAffect* pixelAffected,TAffect* convInp,T* GradFromNextLayer,
     T* kernelWeight,T* outputKernelWeight,
-    dim3 convInpDim,dim3 weightFromNextLayerDim,
+    dim3 convInpDim,dim3 gradientDim,
 int inChannel,int kerSize,float learningRate,
-T* outputWeight) {
+T* outputGrad) {
     int ids = getIDx();
     int idx = getIDy();
     int idy = getIDz();
-    if (ids >= weightFromNextLayerDim.x || idx >= weightFromNextLayerDim.y || idy >= weightFromNextLayerDim.z)
+    if (ids >= gradientDim.x || idx >= gradientDim.y || idy >= gradientDim.z)
 
         return;
-    int idPixelAffect = ids * weightFromNextLayerDim.y * weightFromNextLayerDim.z + idx * weightFromNextLayerDim.z + idy;
-    T thisWeight = WeightFromNextLayer[idPixelAffect];
+    int idPixelAffect = ids * gradientDim.y * gradientDim.z + idx * gradientDim.z + idy;
+    T thisGrad = GradFromNextLayer[idPixelAffect];
     auto pixelAffect = pixelAffected[idPixelAffect];
     short pixelAffectx = pixelAffect.traceBackIDx;
     short pixelAffecty = pixelAffect.traceBackIDy;
@@ -43,45 +43,48 @@ T* outputWeight) {
             int idKernel = pixelAffectx * kerSize * kerSize + i * kerSize + j;
             int idActvation = (pixelAffectx % inChannel) * convInpDim.y * convInpDim.z  + idxOffset * convInpDim.z + idyOffset;
             T oldKernel = kernelWeight[idKernel];
-            atomicAdd(&outputKernelWeight[idKernel], -learningRate * thisWeight *  convInp[idActvation]);
-            atomicAdd(&outputWeight[idActvation],learningRate * oldKernel * thisWeight);
+            atomicAdd(&outputKernelWeight[idKernel], -learningRate * thisGrad *  convInp[idActvation]);
+            atomicAdd(&outputGrad[idActvation],oldKernel * thisGrad);
         }
     }
 }
 template <typename T,typename TAffect = Tracebackable<T>>
-T* CallGPUConvBackward(TAffect* pixelAffected,TAffect* convInp,T* weightFromNextLayer,T* kernelWeight,
-    dim3 convInpDim,dim3 weightFromNextLayerDim,
+T* CallGPUConvBackward(TAffect* pixelAffected,TAffect* convInp,T* gradient,T* kernelWeight,
+    dim3 convInpDim,dim3 gradientDim,
 int inChannel,int kerSize,float learningRate
 ) {
     int convInpLen = convInpDim.x * convInpDim.y * convInpDim.z;
-    T* h_outputWeight = new T[convInpLen];
+    T* h_outputGrad = new T[convInpLen];
     for (int i = 0;i < convInpLen;i++) {
-        h_outputWeight[i] = 0;
+        h_outputGrad[i] = 0;
     }
-    T* d_outputWeight = MallocAndCopyToDevice(h_outputWeight,convInpLen);
-    TAffect* d_pixelAffected =  MallocAndCopyToDevice(pixelAffected,weightFromNextLayerDim);
+    T* d_outputWeight = MallocAndCopyToDevice(h_outputGrad,convInpLen);
+    TAffect* d_pixelAffected =  MallocAndCopyToDevice(pixelAffected,gradientDim);
     TAffect* d_convInp = MallocAndCopyToDevice(convInp,convInpDim);
-    T* d_weightFromNextLayer = MallocAndCopyToDevice(weightFromNextLayer,weightFromNextLayerDim);
+    T* d_weightFromNextLayer = MallocAndCopyToDevice(gradient,gradientDim);
 
-    int KernelLen = weightFromNextLayerDim.x * kerSize * kerSize ;
+    int KernelLen = gradientDim.x * kerSize * kerSize ;
     T* d_kernelWeight = MallocAndCopyToDevice(kernelWeight,KernelLen);
     T* d_outputKernel = MallocAndCopyToDevice(kernelWeight,KernelLen);
-
     dim3 blocks,threads;
-    Caculate3DBlockAndThread(weightFromNextLayerDim,blocks,threads );
-    CUDA_CHECK(cudaGetLastError());
+    Caculate3DBlockAndThread(gradientDim,blocks,threads );
+    cudaGetLastError();
 
     GPUConvBackward<<<blocks,threads>>>(d_pixelAffected,d_convInp,d_weightFromNextLayer,
         d_kernelWeight,d_outputKernel,
-        convInpDim,weightFromNextLayerDim,
+        convInpDim,gradientDim,
         inChannel,kerSize,learningRate,
         d_outputWeight);
-    CopyToHost(h_outputWeight,d_outputWeight,convInpLen);
+
+    CopyToHost(h_outputGrad,d_outputWeight,convInpLen);
     CopyToHost(kernelWeight,d_outputKernel,KernelLen);
+
     cudaFree(d_convInp);
     cudaFree(d_kernelWeight);
     cudaFree(d_pixelAffected);
     cudaFree(d_weightFromNextLayer);
-    return h_outputWeight;
+    cudaFree(d_outputWeight);
+    cudaFree(d_outputKernel);
+    return h_outputGrad;
 }
 #endif //RECNN_CONVOLUTIONLAYERBACKWARDDATA_H

@@ -30,13 +30,13 @@ namespace TommyDat {
         void predict(TDataInput* input) {
             inputedData = input;
             CheckLayersValid();
-            layers[0]->inference( static_cast<void*>( input->data));
+            layers[0]->inference(input->data);
         }
         void backward() {
             CheckLayersValid();
             int n = layers.size();
             Matrix<Tracebackable<float>>* predRes = getPredictResult();
-            Matrix<float>* error =  inputedData->getErrorMatrix(predRes);
+            Matrix<float>* error =  inputedData->getGradientMatrix(predRes);
             // khởi chạy backward
             layers[n - 1]->backward(error,learningRate);
         }
