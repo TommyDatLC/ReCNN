@@ -15,6 +15,8 @@
 #include "../Utils/GPUSoftMax.h"
 #include "../Utils/Sum.h"
 
+typedef unsigned int uint;
+
 namespace TommyDat{
         template <typename T>
         class Matrix
