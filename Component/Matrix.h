@@ -230,6 +230,7 @@ namespace TommyDat{
             }
             void transpose() {
                 CallGPUTranspose(matrixFlatten,size3D,n,m);
+                std::swap(n,m);
             }
             void reShape(int newSize3D,int newM,int newN) {
                 if (newSize3D * newN * newM != lenFlattenCache)
