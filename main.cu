@@ -16,8 +16,8 @@ int main() {
 
     //
     Matrix ker = Matrix<float>(1,1,5,1);
-    ker.transpose();
-    cout << ker;
+    ker.set(0,0,1,3);
+    cout << *ker.transpose();
     // ker.set(0,1,1,4);
     // cout << *ker.softMax() << '\n';
 

@@ -228,9 +228,9 @@ namespace TommyDat{
                         return 0.f;
                 });
             }
-            void transpose() {
-                CallGPUTranspose(matrixFlatten,size3D,n,m);
-                std::swap(n,m);
+            Matrix* transpose() {
+               T* raw =  CallGPUTranspose(matrixFlatten,size3D,n,m);
+                return new Matrix(raw,size3D,m,n);
             }
             void reShape(int newSize3D,int newM,int newN) {
                 if (newSize3D * newN * newM != lenFlattenCache)
