@@ -15,7 +15,9 @@ using namespace TommyDat;
 int main() {
 
     //
-    // Matrix ker = Matrix<float>(10,32,32,1);
+    Matrix ker = Matrix<float>(1,1,5,1);
+    ker.transpose();
+    cout << ker;
     // ker.set(0,1,1,4);
     // cout << *ker.softMax() << '\n';
 
@@ -32,30 +34,30 @@ int main() {
     // cout << "input ker:\n" << ker;
     // cout << "output \n" << *a.convolution(ker);
 
-    NeuralNetwork<NeuralInput> net;
-    NeuralInput data = NeuralInput("./testdata1.png");
-    data.lable = 5;
-    net.learningRate = 1.f;
-    auto layer1 = ConvolutionLayer(3,6,3,2);
-    auto layer2 = MaxPoolingLayer(2,2);
-    net.add(&layer1);
-    net.add(&layer2);
-    int epoc = 1000;
-
-    for (int i = 0;i < epoc;i++) {
-        //cout << "ep: " << i << '\n';
-
-        net.predict(&data);
-      //  auto predictRes = net.getPredictResult();
-        net.backward();
-        if (i % 100 == 0) {
-             auto test = net.getPredictResult();
-             cout <<"test result:" << i<< '\n'  << test->getFlatten( data.lable)<< *test << '\n';
-            // cout << net.CaculateError() << '\n';
-            //layer1.printWeight();
-        }
-
-    }
+    // NeuralNetwork<NeuralInput> net;
+    // NeuralInput data = NeuralInput("./testdata1.png");
+    // data.lable = 5;
+    // net.learningRate = 1.f;
+    // auto layer1 = ConvolutionLayer(3,6,3,2);
+    // auto layer2 = MaxPoolingLayer(2,2);
+    // net.add(&layer1);
+    // net.add(&layer2);
+    // int epoc = 1000;
+    //
+    // for (int i = 0;i < epoc;i++) {
+    //     //cout << "ep: " << i << '\n';
+    //
+    //     net.predict(&data);
+    //   //  auto predictRes = net.getPredictResult();
+    //     net.backward();
+    //     if (i % 100 == 0) {
+    //          auto test = net.getPredictResult();
+    //          cout <<"test result:" << i<< '\n'  << test->getFlatten( data.lable)<< *test << '\n';
+    //         // cout << net.CaculateError() << '\n';
+    //         //layer1.printWeight();
+    //     }
+    //
+    // }
 
 
 

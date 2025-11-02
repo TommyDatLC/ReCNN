@@ -349,27 +349,55 @@ void CallGPUapply(T* __restrict__ A,int n,TdeviceFunc f) {
     cudaMemcpy(A,d_a,sizeof(T) * n,cudaMemcpyDeviceToHost);
     cudaFree(d_a);
 }
+// Kernel: out-of-place transpose for each slice s.
+// Input layout (flatten): A[ s * (n*m) + x * m + y ]  where x in [0..n-1], y in [0..m-1]
+// Output layout (flatten): B[ s * (m*n) + y * n + x ]  -> shape (size3D, m, n)
 template <typename T>
-__global__ void GPUTranspose(T* __restrict__ A,int size3D,int n,int m) {
-    int s = getIDx();
-    int x = getIDy();
-    int y = getIDz();
-    if (s >= size3D || x >= n)
-        return;
-    swapDevice(A[s * n * m + x * m + y],A[s * n * m + y * m + x]);
-}
-template <typename T>
-void CallGPUTranspose(T* __restrict__ A,int size3D,int n,int m) {
-    T* d_a;
-    int len = size3D * n * m;
-    cudaMalloc(&d_a,sizeof(T) * len);
-    cudaMemcpy(d_a,A,sizeof(T) * len,cudaMemcpyHostToDevice);
+__global__ void GPUTranspose3D(const T* __restrict__ A, T* __restrict__ B,
+                               int size3D, int n, int m) {
+    int s = blockIdx.z * blockDim.z + threadIdx.z;
+    int x = blockIdx.y * blockDim.y + threadIdx.y;
+    int y = blockIdx.x * blockDim.x + threadIdx.x;
 
-    dim3 blocks,threads;
+    if (s >= size3D || x >= n || y >= m)
+        return;
+
+    // Gán phần tử (s, x, y) ở A sang (s, y, x) ở B
+    B[s * m * n + y * n + x] = A[s * n * m + x * m + y];
+}
+
+template <typename T>
+T* CallGPUTranspose(T* A, int size3D, int n, int m) {
+    int in_len = size3D * n * m;
+    int out_len = size3D * m * n;
+
+    // Cấp phát và copy input lên device
+    T* d_A = MallocAndCopyToDevice(A, in_len);
+
+    // Cấp phát vùng nhớ cho output trên device
+    T* d_B = nullptr;
+    CUDA_CHECK(cudaMalloc(&d_B, sizeof(T) * out_len));
+
+    // Cấu hình block & grid
+    dim3 threads;
+    dim3 blocks;
     Caculate3DBlockAndThread(size3D,n,m,blocks,threads);
-    GPUTranspose<<<blocks,threads>>>(d_a,size3D,n,m);
-    cudaMemcpy(A,d_a,sizeof(T) * len,cudaMemcpyDeviceToHost);
-    cudaFree(d_a);
+    // Gọi kernel
+    GPUTranspose3D<<<blocks, threads>>>(d_A, d_B, size3D, n, m);
+    CUDA_CHECK(cudaDeviceSynchronize());
+
+    // Cấp phát vùng nhớ host output
+    T* B_host = new T[out_len];
+
+    // Copy từ device về host
+    CopyToHost(B_host, d_B, out_len);
+
+    // Giải phóng GPU memory
+    cudaFree(d_A);
+    cudaFree(d_B);
+
+    // Trả về con trỏ host chứa ma trận đã transpose
+    return B_host;
 }
 
 #endif //RECNN_GPUMATRIXMUL_H

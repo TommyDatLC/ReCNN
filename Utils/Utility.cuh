@@ -72,10 +72,12 @@ void CaculateBlockAndThreadNumber(int lengthArr, int &block, int &thread,int num
         thread = lengthArr < numthread ? lengthArr : numthread;
     block = (lengthArr + thread - 1) / thread;
 }
-
+#define NUMTHREAD3D 8
 void Caculate3DBlockAndThread(int x, int y, int z, dim3 &inpBlock, dim3 &inpThread) {
-    dim3 blocks((x + 9) / 10, (y + 9) / 10, (z + 9) / 10);
-    dim3 threads(10, 10, 10);
+    dim3 blocks((x + NUMTHREAD3D - 1) / NUMTHREAD3D,
+        (y + NUMTHREAD3D - 1) / NUMTHREAD3D,
+        (z + NUMTHREAD3D - 1) / NUMTHREAD3D);
+    dim3 threads(NUMTHREAD3D, NUMTHREAD3D, NUMTHREAD3D);
     inpBlock = blocks;
     inpThread = threads;
 }
