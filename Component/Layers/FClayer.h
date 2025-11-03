@@ -60,7 +60,7 @@ namespace TommyDat {
 
             // Cache input for backward pass
             if (inputCache) delete inputCache;
-            inputCache = new Matrix<Tracebackable<float>>(*input);
+            inputCache = new Matrix(*input);
 
             // Z = W * X + b
             auto weighted = *WeightMatrix * *input;

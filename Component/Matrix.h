@@ -167,7 +167,7 @@ namespace TommyDat{
                 if (size3D != 1)
                     throw std::runtime_error(" We haven't support 3D matrix mul yet");
                 rawResult = CallMatrixMul(matrixFlatten,B.matrixFlatten,n,m,B.m);
-                return new Matrix<TOut>(rawResult,n,B.m);
+                return new Matrix<TOut>(rawResult,size3D,n,B.m);
             }
             template <typename T2>
             Matrix* operator+(Matrix<T2>& B) {
