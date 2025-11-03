@@ -111,7 +111,7 @@ namespace TommyDat{
 
             // --- END new constructor ---
 
-            T* flatten() {
+            T* flatten() const {
                 return matrixFlatten;
             }
 
@@ -123,17 +123,17 @@ namespace TommyDat{
                 matrixFlatten[id] = val;
             }
 
-            T get(uint id3d,uint x,uint y) {
+            T get(uint id3d,uint x,uint y) const {
                 checkValidID(x,y);
                 return matrixFlatten[id3d * m * n + x * m + y];
             }
-            T getFlatten(uint id) {
+            T getFlatten(uint id) const {
                 return matrixFlatten[id];
             }
-            dim3 getDim() {
+            dim3 getDim() const {
                 return dim3(size3D,n,m);
             }
-            int getLen() {
+            int getLen() const {
                 return lenFlattenCache;
             }
             Matrix* softMax() {
@@ -244,7 +244,7 @@ namespace TommyDat{
             T* matrixFlatten = nullptr;
             int n=0,m=0,size3D=0;
             int lenFlattenCache = 0;
-            void checkValidID(uint x,uint y) {
+            void checkValidID(uint x,uint y) const {
                 if (x >= n || y >= m)
                     throw std::runtime_error("out of bound");
             }

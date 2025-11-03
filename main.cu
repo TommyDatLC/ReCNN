@@ -1,6 +1,7 @@
 #include <iostream>
 #include "Component/Serialize.h"
 #include "Component/Matrix.h"
+#include <filesystem>
 #include "Component/Layers/ConvolutionLayer.h"
 #include "Component/Layers/MaxPoolingLayer.h"
 #include "Component/TommyDatNeuralNet/NeuralInput.h"
@@ -9,7 +10,6 @@
 
 using namespace std;
 using namespace TommyDat;
-
 
 // make a class to backtracing
 int main() {
@@ -62,12 +62,13 @@ int main() {
         cout << "Backward completed. Total error: " << net.CaculateError() << "\n";
 
         // Save the network
+        std::filesystem::create_directories("Models");
         cout << "Saving network to mymodel.json...\n";
-        ModelSerialize::saveNetwork(net, "mymodel.json");
+        ModelSerialize::saveNetwork(net, "Models/mymodel.json");
 
         // Load the network back
         cout << "Loading network from mymodel.json...\n";
-        auto loadedNet = ModelSerialize::loadNetwork<NeuralInput>("mymodel.json");
+        auto loadedNet = ModelSerialize::loadNetwork<NeuralInput>("Models/mymodel.json");
 
         // Run inference with loaded network
         cout << "Running forward pass on loaded network...\n";
