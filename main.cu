@@ -1,4 +1,5 @@
 #include <iostream>
+#include "Component/Serialize.h"
 #include "Component/Matrix.h"
 #include "Component/Layers/ConvolutionLayer.h"
 #include "Component/Layers/MaxPoolingLayer.h"
@@ -34,7 +35,6 @@ int main() {
         auto pool2 = MaxPoolingLayer(2, 2);
 
         // Build model
-
         net.add(&conv1);
         net.add(&pool1);
         net.add(&conv2);
@@ -60,6 +60,11 @@ int main() {
         net.backward();
 
         cout << "Backward completed. Total error: " << net.CaculateError() << "\n";
+
+        //Save the trained model
+        cout << "Serializing the model...\n";
+        ModelSerialize::saveNetwork(net, "mymodel.json");
+        cout << "Model saved to mymodel.json\n";
 
     }
 

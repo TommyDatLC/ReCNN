@@ -24,6 +24,7 @@ add_executable(ReCNN
         Component/ConvolutionLayerBackward.h
         Component/TommyDatNeuralNet/NeuralInput.h
         Utils/stbImage.h
+        Component/Serialize.h
 
 )
 
