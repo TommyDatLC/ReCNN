@@ -61,11 +61,21 @@ int main() {
 
         cout << "Backward completed. Total error: " << net.CaculateError() << "\n";
 
-        //Save the trained model
-        cout << "Serializing the model...\n";
+        // Save the network
+        cout << "Saving network to mymodel.json...\n";
         ModelSerialize::saveNetwork(net, "mymodel.json");
-        cout << "Model saved to mymodel.json\n";
 
+        // Load the network back
+        cout << "Loading network from mymodel.json...\n";
+        auto loadedNet = ModelSerialize::loadNetwork<NeuralInput>("mymodel.json");
+
+        // Run inference with loaded network
+        cout << "Running forward pass on loaded network...\n";
+        loadedNet->predict(&input);
+        auto loadedOutput = loadedNet->getPredictResult();
+        cout << "Loaded network output received.\n";
+
+        cout << "=== End of ReCNN Test ===\n";
     }
 
     catch (const std::exception& e) {

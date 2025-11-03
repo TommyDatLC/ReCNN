@@ -2,8 +2,8 @@
 #define RECNN_MODEL_SERIALIZE_H
 
 #include <fstream>
-#include "Utils/json.hpp"
-#include "Component/Matrix.h"
+#include "../Utils/json.hpp"
+#include "../Component/Matrix.h"
 #include "Layers/ConvolutionLayer.h"
 #include "Layers/MaxPoolingLayer.h"
 #include "TommyDatNeuralNet/NeuralNetwork.h"
@@ -20,15 +20,13 @@ public:
 
         if (type == "ConvolutionLayer") {
             ConvolutionLayer* conv = static_cast<ConvolutionLayer*>(layer);
-            // save kernel weights
             j["kernel"] = MatrixToJson(conv->getWeightMatrix());
-            j["stride"] = conv->stride;
+            j["stride"] = conv->getStride();  // use getter
         } else if (type == "MaxPoolingLayer") {
             MaxPoolingLayer* pool = static_cast<MaxPoolingLayer*>(layer);
-            j["size"] = pool->size;
-            j["stride"] = pool->stride;
+            j["size"] = pool->getSize();      // getter needed
+            j["stride"] = pool->getStride();  // getter needed
         }
-        // add more layer types here if needed
 
         return j;
     }
@@ -37,12 +35,13 @@ public:
     template<typename T>
     static json MatrixToJson(const Matrix<T>& mat) {
         json j;
-        dim3 dim = mat.getDim();
+        dim3 dim = mat.getDim();      // getDim() must be const
         j["size3D"] = dim.x;
         j["rows"] = dim.y;
         j["cols"] = dim.z;
-        std::vector<T> data(mat.getLen());
-        memcpy(data.data(), mat.flatten(), sizeof(T) * mat.getLen());
+
+        std::vector<T> data(mat.getLen());  // getLen() must be const
+        memcpy(data.data(), mat.flatten(), sizeof(T) * mat.getLen()); // flatten() const overload
         j["data"] = data;
         return j;
     }
@@ -82,13 +81,13 @@ public:
         std::string type = j["type"];
         if (type == "ConvolutionLayer") {
             ConvolutionLayer* conv = new ConvolutionLayer();
-            conv->setWeightMatrix(loadMatrix<float>(j["kernel"])); // adjust T if needed
-            conv->stride = j["stride"];
+            conv->setWeightMatrix(loadMatrix<float>(j["kernel"]));
+            conv->setStride(j["stride"]);
             return conv;
         } else if (type == "MaxPoolingLayer") {
             MaxPoolingLayer* pool = new MaxPoolingLayer();
-            pool->size = j["size"];
-            pool->stride = j["stride"];
+            pool->setSize(j["size"]);
+            pool->setStride(j["stride"]);
             return pool;
         }
         return nullptr;
@@ -107,7 +106,7 @@ public:
         for (auto& layerJson : jNet["layers"]) {
             void* l = deserializeLayer(layerJson);
             if (l)
-                net->add(static_cast<typename NeuralNetwork<InputType>::LayerBase*>(l));
+                net->add(static_cast<Layer*>(l));  // use Layer* instead of LayerBase*
         }
         return net;
     }

@@ -32,12 +32,25 @@ namespace TommyDat {
             kernelList = new Matrix<float>(outChannel,kernelSize,kernelSize);
            std::cout << "Kernel list before \n" << *kernelList;
         }
+        //Default contructor with zeros values for deserialization
+        ConvolutionLayer() : inChannel(0), outChannel(0), kernelSize(0), stride(1) {
+            kernelList = nullptr;
+        }
+
+        int getStride() const {
+            return stride;
+
+        }
+        void setStride(int s) {
+            stride = s;
+        }
 
         Matrix<float>& getWeightMatrix() const {
             return *kernelList;
         }
 
         void setWeightMatrix(const Matrix<float>& mat) {
+            delete kernelList;
             *kernelList = mat;
         }
 
