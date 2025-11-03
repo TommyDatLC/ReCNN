@@ -112,7 +112,7 @@ namespace TommyDat{
 
             // --- END new constructor ---
 
-            T* flatten() {
+            T* flatten() const{
                 return matrixFlatten;
             }
 
@@ -133,10 +133,10 @@ namespace TommyDat{
                     throw std::runtime_error("Out of bound");
                 return matrixFlatten[id];
             }
-            dim3 getDim() {
+            dim3 getDim() const{
                 return dim3(size3D,n,m);
             }
-            int getLen() {
+            int getLen() const{
                 return lenFlattenCache;
             }
             Matrix softMax() {
@@ -187,7 +187,7 @@ namespace TommyDat{
                 return  Matrix<T>(rawResult,size3D,n,m);
             }
             // the same with toString() function in java
-            friend std::ostream& operator<<(std::ostream& os, Matrix& a) {
+            friend std::ostream& operator<<(std::ostream& os,const Matrix& a) {
                 os << " size:" << a.size3D << 'x' << a.n << 'x' << a.m << '\n';
                 for (int s = 0 ;s < a.size3D;s++) {
                     os << "matrix:" << s << '\n';

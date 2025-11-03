@@ -34,6 +34,23 @@ namespace TommyDat {
             activationType = actType;
           //  std::cout << "FClayer initialized: " << inputSize << " -> " << outputSize << std::endl;
         }
+
+        Matrix<float>* getWeightMatrix() const { return WeightMatrix; }
+        Matrix<float>* getBiasMatrix() const { return BiasMatrix; }
+        EnumActivationType getActivationType() const { return activationType; }
+        bool isFirst() const { return _isFirst; }
+
+        void setWeightMatrix(const Matrix<float>& mat) {
+            if (WeightMatrix) delete WeightMatrix;
+            WeightMatrix = new Matrix<float>(mat);
+        }
+
+        void setBiasMatrix(const Matrix<float>& mat) {
+            if (BiasMatrix) delete BiasMatrix;
+            BiasMatrix = new Matrix<float>(mat);
+        }
+
+
         void init() {
             if (_isFirst) {
                 return;
