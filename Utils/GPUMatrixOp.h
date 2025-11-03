@@ -60,6 +60,7 @@ __global__ void matrixMulTile(const T* A, const T* B, T* __restrict__ C, int N, 
         int aCol = ph * TILE + tx;     // column index in A to load
         int bRow = ph * TILE + ty;     // row index in B to load
         tileA[ty][tx] = (row < N && aCol < K) ? A[row * K + aCol] : 0;
+        if
         tileB[ty][tx] = (bRow < K && col < M) ? B[bRow * M + col] : 0;
         __syncthreads();
         for (int k = 0; k < TILE; ++k) acc += tileA[ty][k] * tileB[k][tx];
