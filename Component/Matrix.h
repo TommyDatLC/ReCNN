@@ -20,6 +20,9 @@ namespace TommyDat{
         class Matrix
         {
             public:
+            Matrix() {
+
+            }
             // copy constructor (sửa memcpy)
             Matrix(Matrix& B) {
                 SetDim(B.size3D,B.n,B.m);
@@ -136,14 +139,14 @@ namespace TommyDat{
             int getLen() {
                 return lenFlattenCache;
             }
-            Matrix* softMax() {
+            Matrix softMax() {
                 T* rawResult = new T[lenFlattenCache];
                 memcpy(rawResult,matrixFlatten,sizeof(T) * lenFlattenCache);
                 T maxElm = CallGPUmax(rawResult,lenFlattenCache);
                 CallGPUExpMinusMax(rawResult,lenFlattenCache,maxElm);
                 T sum = CallGPUSum(rawResult,lenFlattenCache);
                 CallGPUSoftmax(rawResult,lenFlattenCache,sum);
-                return new Matrix(rawResult,size3D,n,m);
+                return Matrix(rawResult,size3D,n,m);
             }
             template <typename Tker>
             Matrix* convolution(Matrix<Tker>& kernel,int stride = 1) {
@@ -155,33 +158,33 @@ namespace TommyDat{
                 auto result =  CallGPUConvolution(matrixFlatten,size3D,n,m,kernelFlatten,dimKer.x,dimKer.y,dimKer.z,stride);
                 return new Matrix(result.newRawMatrix,result.Size3D,result.N,result.M);
             }
-            Matrix* maxPooling(int size,int stride) {
+            Matrix maxPooling(int size,int stride) {
                 auto result =  CallGPUmaxPooling(matrixFlatten,size3D,n,m,size,stride);
-                return new Matrix(result.newRawMatrix,result.Size3D,result.N,result.M);
+                return Matrix(result.newRawMatrix,result.Size3D,result.N,result.M);
             }
             template <typename T2,typename TOut = T>
-            Matrix<TOut>* operator*(const Matrix<T2>& B) {
+            Matrix<TOut> operator*(const Matrix<T2>& B) {
                 T* rawResult;
                 if (m != B.n)
                     throw std::runtime_error("* Dimension error, first matrix col not equal to second matrix row");
                 if (size3D != 1)
                     throw std::runtime_error(" We haven't support 3D matrix mul yet");
                 rawResult = CallMatrixMul(matrixFlatten,B.matrixFlatten,n,m,B.m);
-                return new Matrix<TOut>(rawResult,size3D,n,B.m);
+                return  Matrix<TOut>(rawResult,size3D,n,B.m);
             }
             template <typename T2>
-            Matrix* operator+(Matrix<T2>& B) {
+            Matrix operator+(Matrix<T2>& B) {
                 T* rawResult;
                 checkValidBasicOp(B);
                 rawResult = CallGPUmatrixBasicOP(matrixFlatten,B.flatten(),lenFlattenCache,true);
-                return new Matrix<T>(rawResult,size3D,n,m);
+                return  Matrix<T>(rawResult,size3D,n,m);
             }
             template <typename T2>
-            Matrix<T>* operator-(Matrix<T2>& B) {
+            Matrix<T> operator-(Matrix<T2>& B) {
                 T* rawResult;
                 checkValidBasicOp<T2>(B);
                 rawResult = CallGPUmatrixBasicOP(matrixFlatten,B.flatten(),lenFlattenCache,false);
-                return new Matrix<T>(rawResult,size3D,n,m);
+                return  Matrix<T>(rawResult,size3D,n,m);
             }
             // the same with toString() function in java
             friend std::ostream& operator<<(std::ostream& os, Matrix& a) {
@@ -209,7 +212,7 @@ namespace TommyDat{
             void heInit(int LayerSize,ull seed = 0) {
                 CallGPUheInit(matrixFlatten,lenFlattenCache,LayerSize,seed);
             }
-            void heInit(ull seed = 0) {
+            void heInit(ull seed = 12) {
                 CallGPUheInit(matrixFlatten,lenFlattenCache,lenFlattenCache,seed);
             }
 
@@ -228,9 +231,9 @@ namespace TommyDat{
                         return 0.f;
                 });
             }
-            Matrix* transpose() {
+            Matrix transpose() {
                T* raw =  CallGPUTranspose(matrixFlatten,size3D,n,m);
-                return new Matrix(raw,size3D,m,n);
+                return  Matrix(raw,size3D,m,n);
             }
             void reShape(int newSize3D,int newM,int newN) {
                 if (newSize3D * newN * newM != lenFlattenCache)

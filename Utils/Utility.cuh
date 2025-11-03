@@ -40,8 +40,12 @@ __device__ void swapDevice(T &a, T &b) {
 
 template<typename T>
 void freeArr(T *arr) {
-    if (arr != nullptr)
+    try {
         delete[] arr;
+    }
+    catch (...) {
+
+    }
 }
 template<typename T>
 void CopyToDevice(T* ptr_host,T* ptr_device,int size) {

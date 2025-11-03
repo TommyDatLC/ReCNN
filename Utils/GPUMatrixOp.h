@@ -79,17 +79,12 @@ __global__ void matrixMulTile(const T* A, const T* B, T* __restrict__ C, int N, 
 
 
 template <typename T>
-T* CallMatrixMul(const T* A,const T* B,int HangA,int CotA,int CotB) {
+T* CallMatrixMul(T* A, T* B,int HangA,int CotA,int CotB) {
     T* d_outp,*h_outp = new T[HangA * CotB];
-    T* d_a;
-    T* d_b;
-    int* Debug;
-    cudaMallocManaged(&Debug,sizeof(T) * 1024);
-    cudaMalloc(&d_a,sizeof(T) * HangA * CotA);
-    cudaMalloc(&d_b, sizeof(T) * CotB * CotA );
+    T* d_a =    MallocAndCopyToDevice(A,HangA * CotA);
+    T* d_b =  MallocAndCopyToDevice(B,CotA * CotB);
+
     cudaMalloc(&d_outp,sizeof(T) * HangA * CotB);
-    cudaMemcpy(d_a,A,sizeof(T) * HangA * CotA,cudaMemcpyHostToDevice);
-    cudaMemcpy(d_b,B,sizeof(T) * CotB * CotA,cudaMemcpyHostToDevice);
     dim3 block(32, 32);
     dim3 grid( (CotB + 31) / 32, (HangA + 31) / 32 ); // round-up division
     matrixMulTile<<<grid,block>>>(d_a, d_b, d_outp,HangA, CotA, CotB);
@@ -98,7 +93,7 @@ T* CallMatrixMul(const T* A,const T* B,int HangA,int CotA,int CotB) {
     CUDA_CHECK(cudaGetLastError()); // catch launch error
     CUDA_CHECK(cudaDeviceSynchronize());
 
-    cudaMemcpy(h_outp,d_outp,sizeof(T) * CotB * CotA,cudaMemcpyDeviceToHost);
+    cudaMemcpy(h_outp,d_outp,sizeof(T) * HangA * CotB,cudaMemcpyDeviceToHost);
     cudaFree(d_a);
     cudaFree(d_b);
     cudaFree(d_outp);
