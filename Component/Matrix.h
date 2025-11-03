@@ -237,7 +237,53 @@ namespace TommyDat{
                     throw std::runtime_error("cannot reshape because the new size not match the old size");
                 SetDim(newSize3D,newM,newN);
             }
+#define AXIS_M 0
+#define AXIS_N 1
+            Matrix* sumAlongAxis(bool Axis) {
 
+                if (size3D == 0 || n == 0 || m == 0)
+                    throw std::runtime_error("Empty matrix");
+
+                if (Axis == AXIS_M) {
+                    // Sum theo cột (axis = M) -> giảm m, còn (size3D, n, 1)
+                    int newSize3D = size3D;
+                    int newN = n;
+                    int newM = 1;
+                    T* raw = new T[newSize3D * newN * newM];
+
+                    for (int s = 0; s < size3D; ++s) {
+                        int baseSlice = s * n * m;
+                        int baseOut = s * newN * newM;
+                        for (int i = 0; i < n; ++i) {
+                            // con trỏ tới hàng i trong slice s
+                            T* rowPtr = &matrixFlatten[baseSlice + i * m];
+                            // dùng GPU reduce để tính tổng
+                            raw[baseOut + i * newM] = CallGPUSum(rowPtr, m);
+                        }
+                    }
+                    return new Matrix(raw, newSize3D, newN, newM);
+                } else {
+                    // Sum theo hàng (axis = N) -> giảm n, còn (size3D, 1, m)
+                    int newSize3D = size3D;
+                    int newN = 1;
+                    int newM = m;
+                    T* raw = new T[newSize3D * newN * newM];
+
+                    for (int s = 0; s < size3D; ++s) {
+                        int baseSlice = s * n * m;
+                        int baseOut = s * newN * newM;
+                        for (int j = 0; j < m; ++j) {
+                            // tạo mảng tạm chứa toàn bộ phần tử ở cột j (vì không liên tiếp)
+                            std::vector<T> col(n);
+                            for (int i = 0; i < n; ++i) {
+                                col[i] = matrixFlatten[baseSlice + i * m + j];
+                            }
+                            raw[baseOut * newM + j] = CallGPUSum(col.data(), n);
+                        }
+                    }
+                    return new Matrix(raw, newSize3D, newN, newM);
+                }
+            }
 
 
 
@@ -272,6 +318,7 @@ namespace TommyDat{
                         for (int j = 0;j < M;j++)
                             matrixFlatten[s * N * M + i * M + j] = val;
             }
+
 
         };
     template<typename TOut>

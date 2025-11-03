@@ -15,9 +15,10 @@ using namespace TommyDat;
 int main() {
 
     //
-    Matrix ker = Matrix<float>(1,1,5,1);
-    ker.set(0,0,1,3);
-    cout << *ker.transpose();
+    Matrix ker = Matrix<float>(2,2,5,1);
+    cout << *ker.sumAlongAxis(AXIS_M);
+    // ker.set(0,0,1,3);
+    // cout << *ker.transpose();
     // ker.set(0,1,1,4);
     // cout << *ker.softMax() << '\n';
 
@@ -33,7 +34,6 @@ int main() {
     // cout << "after:\n" << *a.maxPooling(2,2);
     // cout << "input ker:\n" << ker;
     // cout << "output \n" << *a.convolution(ker);
-
     // NeuralNetwork<NeuralInput> net;
     // NeuralInput data = NeuralInput("./testdata1.png");
     // data.lable = 5;
