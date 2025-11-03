@@ -91,7 +91,13 @@ int main () {
         cout << classes[1] << ": " << (prob_cat * 100.0f) << "%\n";
 
         // Find prediction (argmax)
-        int prediction = (prob_dog > prob_cat) ? 0 : 1;
+        int prediction;
+        if (prob_dog > prob_cat) {
+            prediction = 0;
+        } else {
+            prediction = 1;
+        }
+
 
         cout << "\n>>> PREDICTION: " << classes[prediction] << "\n";
 

@@ -106,7 +106,7 @@ namespace TommyDat {
 
             if (activationType == EnumActivationType::ReLU) {
                 activation_grad = new Matrix<float>(outputValues);
-                activation_grad->apply([](float x) { return x > 0 ? 1.0f : 0.0f; });
+                activation_grad->apply([] __device__ (float x) { return x > 0; });
             } else if (activationType == EnumActivationType::softMax) {
                 // For softmax + cross-entropy, gradient is already computed correctly
                 // Just pass through (derivative = 1)
