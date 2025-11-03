@@ -33,6 +33,14 @@ namespace TommyDat {
            std::cout << "Kernel list before \n" << *kernelList;
         }
 
+        Matrix<float>& getWeightMatrix() const {
+            return *kernelList;
+        }
+
+        void setWeightMatrix(const Matrix<float>& mat) {
+            *kernelList = mat;
+        }
+
         void inference(void* ptr_lastLayerInput) override {
             Matrix<Tracebackable<float>>* inputMatrix = static_cast<Matrix<Tracebackable<float>>*>(ptr_lastLayerInput);
             Matrix<Tracebackable<float>>* output = inputMatrix->convolution(*kernelList,stride);
