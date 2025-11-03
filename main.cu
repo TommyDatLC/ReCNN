@@ -29,8 +29,6 @@ NeuralInput loadData(bool useSmall, int label) {
 int main () {
 
     try {
-
-
         // ============ LOAD IMAGE ============
         bool useSmallImage = true;
         int trueLabel = 0;  // Giả sử ảnh này là Dog (0), nếu Cat thì = 1
