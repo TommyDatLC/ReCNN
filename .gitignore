@@ -1,3 +1,5 @@
 #Dataset
 ./Dataset/*
 Dataset/
+#CMake config
+./cmake-build-debug/*
