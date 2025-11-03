@@ -3,3 +3,10 @@
 Dataset/
 #CMake config
 ./cmake-build-debug/*
+# CMake cache and generated files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+
