@@ -44,7 +44,7 @@ T** construct2Dfromflat(T* __restrict__ arr,int n,int m) {
 }
 
 template <typename T>
-__global__ void matrixMulTile(const T* A, const T* B, T* __restrict__ C, int N, int K, int M) {
+__global__ void matrixMulTile(const T* __restrict__ A, const T* B, T* __restrict__ C, int N, int K, int M) {
     constexpr int TILE = 32;
     __shared__ T tileA[TILE][TILE];
     __shared__ T tileB[TILE][TILE];

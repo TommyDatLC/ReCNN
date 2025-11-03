@@ -5,7 +5,7 @@ set(CMAKE_CUDA_STANDARD 20)
 
 add_executable(ReCNN
         Utils/Utility.cuh
-        main.cu
+        main16.cu
         Utils/GPUmax.h
         Utils/GPUPrefixSum.h
         Utils/GPUMatrixOp.h
