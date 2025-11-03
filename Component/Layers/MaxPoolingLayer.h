@@ -16,6 +16,25 @@ namespace TommyDat {
             this->stride = stride;
             this->size = size;
         }
+
+        int getStride() const { return
+            stride;
+
+        }
+        void setStride(int s) {
+            stride = s;
+
+        }
+        int getSize() const { return
+            size;
+
+        }
+        void setSize(int s) {
+            size = s;
+        }
+        // Constructor for deserialization
+       MaxPoolingLayer() : stride(1), size(2) {}
+
         void inference(void *ptr_lastLayerInput) override {
            Matrix<Tracebackable<float>>* inputMatrix = static_cast<Matrix<Tracebackable<float>>*>(ptr_lastLayerInput);
            // std::cout << "input matrix \n" << *inputMatrix;
