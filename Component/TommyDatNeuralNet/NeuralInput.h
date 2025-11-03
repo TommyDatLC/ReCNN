@@ -15,13 +15,16 @@ namespace TommyDat {
 
             // std::cout << "input:\n" << *data;
         }
-        Matrix<float>* getGradientMatrix(void* lastLayerActivation) override {
+        NeuralInput() {
+
+        }
+        Matrix<float> getGradientMatrix(void* lastLayerActivation) override {
             Matrix<Tracebackable<float>>* predictResultMatrix = static_cast<Matrix<Tracebackable<float>>*>(lastLayerActivation);
             dim3 predictResultMatrixDim = predictResultMatrix->getDim();
             auto predictSoftMax = predictResultMatrix->softMax();
             Matrix labelMatrix = Matrix(predictResultMatrixDim,0.f);
             labelMatrix.setFlatten(lable,-1.f);
-            Matrix<float>* result =  labelMatrix + *predictSoftMax;
+            Matrix<float> result =  labelMatrix + predictSoftMax;
 
             return result;
         }
@@ -42,8 +45,8 @@ namespace TommyDat {
            //  delete ptr_afterMul;
            //  return res;
          //  std::cout << predictSoftMax->getFlatten(lable) << '\n';
-            float res = -logf( predictSoftMax->getFlatten(lable));
-            delete predictSoftMax;
+            float res = -logf( predictSoftMax.getFlatten(lable));
+
             return res;
         }
     };

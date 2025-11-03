@@ -1,140 +1,156 @@
 #include <iostream>
-#include "Component/TommyDatNeuralNet/NeuralInput.h"
-#include "Component/TommyDatNeuralNet/NeuralNetwork.h"
-#include "Component/Matrix.h"
+#include <vector>
+#include <string>
+#include <filesystem>
+#include <algorithm>
+
 #include "Component/Layers/ConvolutionLayer.h"
-#include "Component/Layers/MaxPoolingLayer.h"
 #include "Component/Layers/FClayer.h"
+#include "Component/Layers/MaxPoolingLayer.h"
+#include "Component/TommyDatNeuralNet/NeuralInput.h"
 
 
-using namespace std;
-using namespace TommyDat;
+#include "Component/TommyDatNeuralNet/NeuralNetwork.h"
 
-NeuralInput loadData(bool useSmall, int label) {
-    string path;
-    if (useSmall) {
-        path = "./dog_16x16.JPEG";
-        cout << "Loading 16x16: " << path << endl;
-    }
-    else {
-        path = "./dog_400x400.jpg";
-        cout << "Loading 400x400: " << path << endl;
-    }
-    NeuralInput input(path);
-    input.lable = label;  // Set label (0 = Dog, 1 = Cat)
-    cout << "Loaded image successfully: " << path << endl;
-    return input;
+namespace TommyDat {
+    class FCInput;
 }
 
-int main () {
+using namespace std;
+namespace fs = std::filesystem;
+using namespace TommyDat;
 
-    try {
-        // ============ LOAD IMAGE ============
-        bool useSmallImage = true;
-        int trueLabel = 0;  // Giả sử ảnh này là Dog (0), nếu Cat thì = 1
-        NeuralInput input = loadData(useSmallImage, trueLabel);
+// === HÀM PHỤ ===
+bool hasImageExtension(const string& filename) {
+    string ext;
+    size_t dotPos = filename.find_last_of(".");
+    if (dotPos == string::npos) return false;
+    ext = filename.substr(dotPos + 1);
 
-        // ============ BUILD CNN ============
-        cout << "\nBuilding CNN architecture...\n";
+    // Chuyển về chữ thường để so sánh
+    transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+    return (ext == "jpg" || ext == "jpeg" || ext == "png");
+}
 
-        // Convolutional layers
-        auto layer1 = ConvolutionLayer(3, 6, 3, 2);   // 3→6 channels, kernel 3×3, stride 2
-        auto layer2 = MaxPoolingLayer(2, 2);          // 2×2 pooling
+// === HÀM ĐỌC THƯ MỤC ẢNH ===
+vector<NeuralInput> ReadImageFolder(const string& folderPath, int label) {
+    vector<NeuralInput> res;
 
-        // Fully connected layers (MLP)
-        // Giả sử sau conv+pool: 6×4×4 = 96 neurons (tùy input size)
-        auto fc1 = FClayer(96, 32, EnumActivationType::ReLU);    // 96 → 32
-        auto fc2 = FClayer(32, 16, EnumActivationType::ReLU);    // 32 → 16
-        auto output = FClayer(16, 2, EnumActivationType::softMax);  // 16 → 2 (Dog, Cat) - Will apply softMax in forward
-
-        // Chain layers
-        layer1.setNextLayer(&layer2);
-        layer2.setNextLayer(&fc1);
-        fc1.setNextLayer(&fc2);
-        fc2.setNextLayer(&output);
-
-        fc1.setLastLayer(&layer2);
-        fc2.setLastLayer(&fc1);
-        output.setLastLayer(&fc2);
-
-        cout << "Architecture:\n";
-        cout << "  Input → Conv(3→6) → Pool → FC(96→32) → FC(32→16) → Output(2)\n\n";
-
-        // ============ FORWARD PASS ============
-        cout << "Running forward pass...\n";
-        layer1.inference(&input);
-
-        // ============ GET PREDICTION ============
-
-        // Lấy output từ last FC layer (đã có softmax!)
-        Matrix<Tracebackable<float>>* rawOutput = output.getOutActivation();
-
-        if (!rawOutput) {
-            cerr << " Error: No output from network!" << endl;
-            return 1;
-        }
-
-        // Convert to float values (already softmax probabilities)
-        Matrix<float> probabilities = toValueMatrix<float>(*rawOutput);
-
-        const char* classes[] = {"Dog ", "Cat "};
-
-
-
-        // Get probabilities
-        float prob_dog = probabilities.getFlatten(0);
-        float prob_cat = probabilities.getFlatten(1);
-
-        cout << classes[0] << ": " << (prob_dog * 100.0f) << "%\n";
-        cout << classes[1] << ": " << (prob_cat * 100.0f) << "%\n";
-
-        // Find prediction (argmax)
-        int prediction;
-        if (prob_dog > prob_cat) {
-            prediction = 0;
-        } else {
-            prediction = 1;
-        }
-
-
-        cout << "\n>>> PREDICTION: " << classes[prediction] << "\n";
-
-        // Calculate error/loss (Cross-Entropy)
-        float loss = -logf(probabilities.getFlatten(trueLabel));
-        cout << ">>> LOSS (Cross-Entropy): " << loss << "\n";
-
-
-
-        // ============ TRAINING  ============
-        bool doTrain = false;  // Set true to train
-
-        if (doTrain) {
-            cout << "\n=== TRAINING MODE ===\n\n";
-
-
-            // gradient = softmax - target (one-hot)
-
-            Matrix<float> gradient(probabilities);  // Copy probabilities
-
-            // Subtract 1 at true label position
-            gradient.setFlatten(trueLabel, gradient.getFlatten(trueLabel) - 1.0f);
-
-            // Backward pass
-            float learningRate = 0.01f;
-            output.backward(&gradient, learningRate);
-
-            cout << "Training step completed!\n";
-            cout << "Weights updated with learning rate: " << learningRate << "\n";
-        }
-
-        cout << "\nProgram finished successfully!\n";
-
-    }
-    catch (const exception& e) {
-        cerr << "\n Error: " << e.what() << endl;
-        return 1;
+    if (!fs::exists(folderPath)) {
+        cerr << "Folder not found: " << folderPath << endl;
+        return res;
     }
 
-    return 0;
+    for (const auto& entry : fs::directory_iterator(folderPath)) {
+        if (entry.is_regular_file()) {
+            string path = entry.path().string();
+            if (hasImageExtension(path)) {
+                try {
+                    NeuralInput a(path);
+                    a.lable = label;
+                    res.push_back(a);
+                } catch (const exception& e) {
+                    cerr << "Error loading " << path << ": " << e.what() << endl;
+                }
+            }
+        }
+    }
+
+    return res;
+}
+
+// === HÀM ĐỌC ẢNH 16x16 ===
+vector<NeuralInput> ReadImage16x16() {
+    vector<NeuralInput> res;
+
+    cout << "Loading 16x16 images...\n";
+
+    string catPath = "./Dataset/cat/16x16";
+    string dogPath = "./Dataset/dog/16x16";
+
+    vector<NeuralInput> cats = ReadImageFolder(catPath, 0);
+    vector<NeuralInput> dogs = ReadImageFolder(dogPath, 1);
+
+    res.insert(res.end(), cats.begin(), cats.end());
+    res.insert(res.end(), dogs.begin(), dogs.end());
+
+    cout << "Loaded " << res.size() << " images (16x16): "
+         << cats.size() << " cats, " << dogs.size() << " dogs\n";
+
+    return res;
+}
+
+// === HÀM ĐỌC ẢNH 400x400 ===
+vector<NeuralInput> ReadImage400x400() {
+    vector<NeuralInput> res;
+
+    cout << "Loading 400x400 images...\n";
+
+    string catPath = "./Dataset/cat/400x400";
+    string dogPath = "./Dataset/dog/400x400";
+
+    vector<NeuralInput> cats = ReadImageFolder(catPath, 0);
+    vector<NeuralInput> dogs = ReadImageFolder(dogPath, 1);
+
+    res.insert(res.end(), cats.begin(), cats.end());
+    res.insert(res.end(), dogs.begin(), dogs.end());
+
+    cout << "Loaded " << res.size() << " images (400x400): "
+         << cats.size() << " cats, " << dogs.size() << " dogs\n";
+
+    return res;
+}
+
+// ============================================
+// MAIN
+// ============================================
+int main() {
+
+    //     Matrix a = Matrix<float>(1,1,16);
+    // cout << a;
+        // cout << "========================================\n";
+        // cout << "   Cat vs Dog CNN Classifier\n";
+        // cout << "========================================\n\n";
+        NeuralNetwork<NeuralInput> net;
+        //
+        // // ============ LOAD IMAGES ============
+        // bool useSmallImage = true;  // true = 16x16, false = 400x400
+        // vector<NeuralInput> trainingData;
+        //
+        // if (useSmallImage) {
+        //     trainingData = ReadImage16x16();
+        // } else {
+        //     trainingData = ReadImage400x400();
+        // }
+        //
+        //
+        // cout << trainingData.size() << endl;
+        //
+        // // ============ BUILD CNN ============
+        // cout << "Building CNN architecture...\n";
+        //
+        // //auto layer1 = ConvolutionLayer(3, 6, 3, 2);
+        // //auto layer2 = MaxPoolingLayer(2, 2);
+        auto fc1 = FClayer(10, EnumActivationType::ReLU,true);
+        auto fc2 = FClayer( 16, EnumActivationType::ReLU);
+        auto output = FClayer(2, EnumActivationType::softMax);
+        net.add(&fc1);
+        net.add(&fc2);
+        net.add(&output);
+        fc1.init();
+        fc2.init();
+        output.init();
+        NeuralInput a;
+        a.lable = 1;
+         a.data = new Matrix<Tracebackable<float>>(1,1,10);
+        net.predict(&a);
+        auto t = output.getOutActivation();
+        std::cout << "OutputMatrix" <<*t ;
+        //
+        //
+        // cout << "Architecture: Input → Conv(3→6) → Pool → FC(96→32) → FC(32→16) → Output(2)\n\n";
+        //
+        // // ============ TRAINING ============
+
 
 }

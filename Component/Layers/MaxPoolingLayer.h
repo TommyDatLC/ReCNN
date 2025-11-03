@@ -21,9 +21,9 @@ namespace TommyDat {
            // std::cout << "input matrix \n" << *inputMatrix;
             auto outputMatrix = inputMatrix->maxPooling(size,stride);
           //  std::cout << "output matrix \n" << *outputMatrix;
-            setOutActivation(outputMatrix);
+            setOutActivation(&outputMatrix);
             if (nextLayer != nullptr)
-                nextLayer->inference(outputMatrix);
+                nextLayer->inference(&outputMatrix);
         }
         // reShape the layer
         void backward(void *ptr_nextLayerInput,float learningRate) override {

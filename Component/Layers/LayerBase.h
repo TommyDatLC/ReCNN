@@ -24,7 +24,8 @@ namespace TommyDat {
             delete outActivation;
             outActivation = newAc;
         }
-        Matrix<Tracebackable<float>>* getOutActivation() {
+
+        Matrix<Tracebackable<float>> *getOutActivation() {
             return outActivation;
         }
         void setInActivation(Matrix<Tracebackable<float>>* newAc) {
