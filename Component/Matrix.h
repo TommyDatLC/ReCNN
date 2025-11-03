@@ -167,7 +167,7 @@ namespace TommyDat{
                 if (size3D != 1)
                     throw std::runtime_error(" We haven't support 3D matrix mul yet");
                 rawResult = CallMatrixMul(matrixFlatten,B.matrixFlatten,n,m,B.m);
-                return new Matrix<TOut>(rawResult,n,B.m);
+                return new Matrix<TOut>(rawResult,size3D,n,B.m);
             }
             template <typename T2>
             Matrix* operator+(Matrix<T2>& B) {
@@ -340,6 +340,50 @@ namespace TommyDat{
             throw std::runtime_error("Dimension error, cannot mul when the two matrix shape is not match");
         auto ptr_res = CallGPUmatrixBasicOP(a.flatten(),b.flatten(),aLen,MAT_OP_MUL);
         return new Matrix<T1>(ptr_res,aDim.x,aDim.y,aDim.z);
+    }
+    template <typename T>
+    Matrix<T>* SumAlongAxis(Matrix<T>& mat,int axis){
+        dim3 dim = mat.getDim();
+        int size3D = dim.x, n= dim.y, m = dim.z;
+        if (axis < 0 || axis > 2) {
+            throw std::runtime_error("Axis mmust be 0,1 or 2");
+        }
+         // sum along size3D ( dimensions or deeps)
+        if (axis == 0) {
+            Matrix<T>* result = new Matrix<T>(1,n,m,0);
+            for (int s = 0; s < size3D ;s++) {
+                for (int i = 0; i < n; i++) {
+                    for (int j = 0; j < m; j++) {
+                        result->set(0,i,j, result->get(0,i,j)+mat.get(axis,s,i));
+                    }
+                }
+            }
+            return result;
+
+        }
+        // sum along rows
+        else if (axis == 1) {
+            Matrix<T>* result = new Matrix<T>(size3D, 1, m, 0);
+            for (int s = 0; s < size3D; s++) {
+                for (int i = 0; i < n; i++) {
+                    for (int j = 0; j < m; j++) {
+                        result->set(s, 0, j, result->get(s, 0,j) + mat.get(s, i ,j));
+                    }
+                }
+            }
+            return result;
+        }// sum along colums
+        else {
+            Matrix<T>* result = new Matrix<T>(size3D, n, 1,0 );
+            for (int s = 0; s < size3D; s++) {
+                for (int i = 0; i < n; i++) {
+                    for (int j =0; j < m; j++) {
+                        result->set(s,i,0, result->get(s,i,0) + mat.get(s,i,j));
+                    }
+                }
+            }
+            return result;
+        }
     }
 }
 

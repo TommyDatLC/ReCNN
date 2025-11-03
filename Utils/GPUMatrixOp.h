@@ -59,8 +59,17 @@ __global__ void matrixMulTile(const T* A, const T* B, T* __restrict__ C, int N, 
     for (int ph = 0; ph < numPhases; ++ph) {
         int aCol = ph * TILE + tx;     // column index in A to load
         int bRow = ph * TILE + ty;     // row index in B to load
-        tileA[ty][tx] = (row < N && aCol < K) ? A[row * K + aCol] : 0;
-        tileB[ty][tx] = (bRow < K && col < M) ? B[bRow * M + col] : 0;
+
+        if (row < N && aCol < K)
+            tileA[ty][tx] = A[row * K + aCol];
+        else
+            tileA[ty][tx] = 0;
+
+        if (row < N && aCol < K)
+            tileA[ty][tx] = B[bRow * M + col];
+        else
+            tileA[ty][tx] = 0;
+
         __syncthreads();
         for (int k = 0; k < TILE; ++k) acc += tileA[ty][k] * tileB[k][tx];
         __syncthreads();
