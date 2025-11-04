@@ -30,6 +30,13 @@ namespace TommyDat{
                 memcpy(matrixFlatten, B.flatten(), sizeof(T) * lenFlattenCache);
             }
 
+            Matrix(const Matrix& B) {
+                SetDim(B.size3D, B.n, B.m);
+                matrixFlatten = new T[lenFlattenCache];
+                memcpy(matrixFlatten, B.flatten(), sizeof(T) * lenFlattenCache);
+            }
+
+
             Matrix(int size3D,int N,int M) {
                 SetDim(size3D,N,M);
                 matrixFlatten = new T[lenFlattenCache];

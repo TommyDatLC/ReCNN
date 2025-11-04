@@ -7,7 +7,7 @@
 #include "Layers/ConvolutionLayer.h"
 #include "Layers/MaxPoolingLayer.h"
 #include "TommyDatNeuralNet/NeuralNetwork.h"
-#include "Component/Layers/FClayer.h"
+#include "../Component/Layers/FClayer.h"
 
 using json = nlohmann::json;
 using namespace TommyDat;
