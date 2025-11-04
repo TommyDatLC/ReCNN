@@ -3,6 +3,8 @@
 //
 #ifndef RECNN_CONVOLUTIONLAYE_H
 #define RECNN_CONVOLUTIONLAYE_H
+#include <memory_resource>
+
 #include "LayerBase.h"
 #include "../ConvolutionLayerBackward.h"
 #include "../EnumActivationType.h"
@@ -60,9 +62,12 @@ namespace TommyDat {
            //   std::cout << "INPUT CONV MATRIX \n" << *inputMatrix;
              // std::cout << "output matrix \n" << *output;
             output->ReLU();
-            setInActivation(inputMatrix);
+            auto ptr_inpCopy = new Matrix(*inputMatrix);
+
+            setInActivation<Matrix<Tracebackable<float>>>(ptr_inpCopy);
             if (nextLayer != nullptr)
                 nextLayer->inference(output);
+            delete output;
         }
         void printWeight() {
             std::cout << "Kernel list \n" << *kernelList;
@@ -81,7 +86,9 @@ namespace TommyDat {
             //
             if (lastLayer != nullptr)
                 lastLayer->backward(&newWeightMat,leaningRate);
+
         }
+
         ~ConvolutionLayer() {
             delete kernelList;
         }

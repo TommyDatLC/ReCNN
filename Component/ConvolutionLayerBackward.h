@@ -9,6 +9,10 @@ using namespace TommyDat;
 struct ConvBackwardData {
     Matrix<Tracebackable<float>>* ptr_nextLayerPixelAffect = nullptr;
     Matrix<float>* gradient = nullptr;
+    // ~ConvBackwardData() {
+    //     delete gradient;
+    //     delete ptr_nextLayerPixelAffect;
+    // }
 };
 // TracebackWeight
 template <typename T,typename TAffect = Tracebackable<T>>
