@@ -176,14 +176,14 @@ namespace TommyDat{
             Matrix operator+(Matrix<T2>& B) {
                 T* rawResult;
                 checkValidBasicOp(B);
-                rawResult = CallGPUmatrixBasicOP(matrixFlatten,B.flatten(),lenFlattenCache,true);
+                rawResult = CallGPUmatrixBasicOP(matrixFlatten,B.flatten(),lenFlattenCache,MAT_OP_ADD);
                 return  Matrix<T>(rawResult,size3D,n,m);
             }
             template <typename T2>
             Matrix<T> operator-(Matrix<T2>& B) {
                 T* rawResult;
                 checkValidBasicOp<T2>(B);
-                rawResult = CallGPUmatrixBasicOP(matrixFlatten,B.flatten(),lenFlattenCache,false);
+                rawResult = CallGPUmatrixBasicOP(matrixFlatten,B.flatten(),lenFlattenCache,MAT_OP_SUBTRACT);
                 return  Matrix<T>(rawResult,size3D,n,m);
             }
             // the same with toString() function in java
@@ -231,7 +231,15 @@ namespace TommyDat{
                         return 0.f;
                 });
             }
+            void TransposeVector() {
+                std::swap(n,m);
+            }
             Matrix transpose() {
+                // if (n == 1 || m == 1) {
+                //     Matrix res = Matrix(*this);
+                //     res.TransposeVector();
+                //     return res;
+                // }
                T* raw =  CallGPUTranspose(matrixFlatten,size3D,n,m);
                 return  Matrix(raw,size3D,m,n);
             }

@@ -19,33 +19,19 @@ namespace TommyDat {
 
         }
         Matrix<float> getGradientMatrix(void* lastLayerActivation) override {
-            Matrix<Tracebackable<float>>* predictResultMatrix = static_cast<Matrix<Tracebackable<float>>*>(lastLayerActivation);
+            Matrix<float>* predictResultMatrix = static_cast<Matrix<float>*>(lastLayerActivation);
             dim3 predictResultMatrixDim = predictResultMatrix->getDim();
-            auto predictSoftMax = predictResultMatrix->softMax();
             Matrix labelMatrix = Matrix(predictResultMatrixDim,0.f);
             labelMatrix.setFlatten(lable,-1.f);
-            Matrix<float> result =  labelMatrix + predictSoftMax;
+            Matrix<float> result =  labelMatrix + *predictResultMatrix;
 
             return result;
         }
         float getError(void *predictResult) override {
-           Matrix<Tracebackable<float>>* predictResultMatrix = static_cast<Matrix<Tracebackable<float>>*>(predictResult);
+           Matrix<float>* predictResultMatrix = static_cast<Matrix<float>*>(predictResult);
 
-           Matrix<float> predictResultValueMatrix = toValueMatrix<float>(*predictResultMatrix);
-            auto predictSoftMax = predictResultMatrix->softMax();
 
-           //  dim3 predictResultMatrixDim = predictResultValueMatrix.getDim();
-           //  Matrix labelMatrix = Matrix(predictResultMatrixDim,0.f);
-           //  labelMatrix.setFlatten(lable,1.f);
-           //  predictResultMatrix->log();
-           //  auto ptr_afterMul =  mulUnofficial(labelMatrix,predictResultValueMatrix);
-           // // std::cout << *ptr_afterMul;
-           //  // std::cout << *ptr_afterMul;
-           //  float res = CallGPUSum(ptr_afterMul->flatten(),predictResultMatrixDim.x * predictResultMatrixDim.y * predictResultMatrixDim.z);
-           //  delete ptr_afterMul;
-           //  return res;
-         //  std::cout << predictSoftMax->getFlatten(lable) << '\n';
-            float res = -logf( predictSoftMax.getFlatten(lable));
+            float res = -logf( predictResultMatrix->getFlatten(lable));
 
             return res;
         }
