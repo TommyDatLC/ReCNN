@@ -34,14 +34,14 @@ namespace TommyDat {
         Matrix<float>* getWeightMatrix() {
             return WeightMatrix;
         }
-        const Matrix<float>* getWeightMatrix() const {
+        Matrix<float>* getWeightMatrix() const {
             return WeightMatrix;
         }
 
         Matrix<float>* getBiasMatrix() {
             return BiasMatrix;
         }
-        const Matrix<float>* getBiasMatrix() const {
+        Matrix<float>* getBiasMatrix() const {
             return BiasMatrix;
         }
 
@@ -69,10 +69,9 @@ namespace TommyDat {
             BiasMatrix = nullptr;
         }
 
-        Matrix<float>* getWeightMatrix() const { return WeightMatrix; }
-        Matrix<float>* getBiasMatrix() const { return BiasMatrix; }
-        EnumActivationType getActivationType() const { return activationType; }
-        bool isFirst() const { return _isFirst; }
+
+        EnumActivationType getActivationType()  { return activationType; }
+        bool isFirst()  { return _isFirst; }
 
         void setWeightMatrix(const Matrix<float>& mat) {
             if (WeightMatrix) delete WeightMatrix;

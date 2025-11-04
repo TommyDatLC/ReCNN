@@ -20,16 +20,6 @@ namespace fs = std::filesystem;
 using namespace TommyDat;
 
 // === HÀM PHỤ ===
-bool hasImageExtension(const string& filename) {
-    string ext;
-    size_t dotPos = filename.find_last_of(".");
-    if (dotPos == string::npos) return false;
-    ext = filename.substr(dotPos + 1);
-
-    // Chuyển về chữ thường để so sánh
-    transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
-    return (ext == "jpg" || ext == "jpeg" || ext == "png");
-}
 
 // === HÀM ĐỌC THƯ MỤC ẢNH ===
 vector<NeuralInput> ReadImageFolder(const string& folderPath, int label) {
@@ -139,6 +129,7 @@ int main() {
         // cout << "Building CNN architecture...\n";
         //
         NeuralNetwork<NeuralInput> net;
+        int n = 10;
         net.learningRate = 0.001f;
             globalLearningRate.store(net.learningRate);
         std::thread lrThread(monitorLearningRate);
@@ -159,7 +150,6 @@ int main() {
         output.init();
         // Matrix loss(1,1,2,0.f);
         // loss.set(0,0,1,-1);
-        int n = 1000;
 
         // NeuralInput a;
         // a.lable = 1;
@@ -222,9 +212,10 @@ int main() {
 
 
         auto* reloadedNet = ModelSerialize::loadNetwork<float>("../Models/mymodel.json");
+
         std::cout << " Model loaded successfully\n";
 
         delete reloadedNet;
         return 0;
-    }
+
 }

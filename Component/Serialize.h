@@ -91,10 +91,11 @@ public:
             j["stride"] = pool->getStride();
         }
         else if (auto fc = dynamic_cast<const FClayer*>(layer)) {
+            auto fc1 = (FClayer*)fc;
             j["type"] = "FClayer";
-            j["dense"] = fc->getDense();
-            j["activation"] = activationToString(fc->getActivationType());
-            j["isFirst"] = fc->isFirst();
+            j["dense"] = fc1->getDense();
+            j["activation"] = activationToString(fc1->getActivationType());
+            j["isFirst"] = fc1->isFirst();
 
             Matrix<float>* w = fc->getWeightMatrix();
             Matrix<float>* b = fc->getBiasMatrix();
