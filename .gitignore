@@ -1,0 +1,17 @@
+# remove raw dataset
+Dataset/
+
+# Temporary Cache and file of Python
+__pycache__/
+*.pyc
+*.pyo
+
+#  log file
+*.log
+*.tmp
+
+# keep subzip
+*.zip
+
+# IDE files (CLion)
+.idea/
