@@ -1,161 +1,195 @@
-// #ifndef RECNN_MODEL_SERIALIZE_H
-// #define RECNN_MODEL_SERIALIZE_H
-//
-// #include <fstream>
-// #include <stdexcept>
-// #include "../Utils/json.hpp"
-// #include "../Component/Matrix.h"
-// #include "Layers/ConvolutionLayer.h"
-// #include "Layers/MaxPoolingLayer.h"
-// #include "Layers/FClayer.h"
-// #include "TommyDatNeuralNet/NeuralNetwork.h"
-//
-// using json = nlohmann::json;
-// using namespace TommyDat;
-//
-// class ModelSerialize {
-// public:
-//     // Convert a Matrix to JSON (template kept)
-//     template<typename T>
-//     static json MatrixToJson(const Matrix<T>& mat) {
-//         json j;
-//         dim3 dim = mat.getDim();      // requires getDim() const
-//         j["size3D"] = dim.x;
-//         j["rows"] = dim.y;
-//         j["cols"] = dim.z;
-//
-//         int len = mat.getLen();// getLen() must be const
-//         std::vector<T> data;
-//         data.reserve(len);
-//         for (int i = 0; i < len; ++i) {
-//             data.push_back(mat.getFlatten(static_cast<unsigned int>(i)));
-//         }
-//
-//         j["data"] = data;
-//         return j;
-//     }
-//
-//     // Save a single layer to JSON
-//     static json serializeLayer(void* layer, const std::string& type) {
-//         json j;
-//         j["type"] = type;
-//
-//         if (type == "ConvolutionLayer") {
-//             ConvolutionLayer* conv = static_cast<ConvolutionLayer*>(layer);
-//             j["kernel"] = MatrixToJson(conv->getWeightMatrix());
-//             j["stride"] = conv->getStride();
-//         } else if (type == "MaxPoolingLayer") {
-//             MaxPoolingLayer* pool = static_cast<MaxPoolingLayer*>(layer);
-//             j["size"] = pool->getSize();
-//             j["stride"] = pool->getStride();
-//         } else if (type == "FClayer") {
-//             FClayer* fc = static_cast<FClayer*>(layer);
-//             j["dense"] = fc->getDense();
-//             // weight & bias could be nullptr
-//             if (fc->getWeightMatrix() != nullptr) {
-//                 j["weight"] = MatrixToJson(*fc->getWeightMatrix());
-//             } else {
-//                 j["weight"] = nullptr;
-//             }
-//
-//             if (fc->getBiasMatrix() != nullptr) {
-//                 j["bias"] = MatrixToJson(*fc->getBiasMatrix());
-//             } else {
-//                 j["bias"] = nullptr;
-//             }
-//         }
-//
-//         return j;
-//     }
-//
-//     // Save entire NeuralNetwork
-//     template<typename InputType>
-//     static void saveNetwork(const NeuralNetwork<InputType>& net, const std::string& filename) {
-//         json jNet;
-//         jNet["learningRate"] = net.learningRate;
-//         jNet["layers"] = json::array();
-//
-//         for (auto l : net.layers) {
-//             if (auto conv = dynamic_cast<ConvolutionLayer*>(l)) {
-//                 jNet["layers"].push_back(serializeLayer(conv, "ConvolutionLayer"));
-//             } else if (auto pool = dynamic_cast<MaxPoolingLayer*>(l)) {
-//                 jNet["layers"].push_back(serializeLayer(pool, "MaxPoolingLayer"));
-//             } else if (auto fc = dynamic_cast<FClayer*>(l)) {
-//                 jNet["layers"].push_back(serializeLayer(fc, "FClayer"));
-//             } else {
-//                 // unknown layer: optionally skip or store its type name if available
-//             }
-//         }
-//
-//         std::ofstream file(filename);
-//         if (!file.is_open()) throw std::runtime_error("Failed to open file for writing: " + filename);
-//         file << jNet.dump(4);
-//         file.close();
-//     }
-//
-//     // Load a matrix from JSON
-//     template<typename T>
-//     static Matrix<T> loadMatrix(const json& j) {
-//         if (j.is_null()) throw std::runtime_error("loadMatrix: json is null");
-//         int size3D = j["size3D"];
-//         int rows = j["rows"];
-//         int cols = j["cols"];
-//         std::vector<T> data = j["data"].get<std::vector<T>>();
-//         return Matrix<T>(data.data(), size3D, rows, cols);
-//     }
-//
-//     // Load a layer from JSON
-//     static void* deserializeLayer(const json& j) {
-//         std::string type = j["type"];
-//         if (type == "ConvolutionLayer") {
-//             ConvolutionLayer* conv = new ConvolutionLayer();
-//             conv->setWeightMatrix(loadMatrix<float>(j["kernel"]));
-//             conv->setStride(j["stride"]);
-//             return conv;
-//         } else if (type == "MaxPoolingLayer") {
-//             MaxPoolingLayer* pool = new MaxPoolingLayer();
-//             pool->setSize(j["size"]);
-//             pool->setStride(j["stride"]);
-//             return pool;
-//         } else if (type == "FClayer") {
-//             int dense = j.value("dense", 0);
-//             std::string actStr = j.value("activation", std::string("ReLU"));
-//             bool isFirst = j.value("isFirst", false);
-//
-//             // Prefer creating with constructor that sets dense/act/isFirst if available
-//             FClayer* fc = nullptr;
-//             // weight & bias may be null in json (e.g., isFirst)
-//             if (j.contains("weight") && !j["weight"].is_null()) {
-//                 Matrix<float> w = loadMatrix<float>(j["weight"]);
-//                 fc->setWeightMatrix(w);
-//             }
-//             if (j.contains("bias") && !j["bias"].is_null()) {
-//                 Matrix<float> b = loadMatrix<float>(j["bias"]);
-//                 fc->setBiasMatrix(b);
-//             }
-//             return fc;
-//         }
-//         return nullptr;
-//     }
-//
-//     // Load entire NeuralNetwork
-//     template<typename InputType>
-//     static NeuralNetwork<InputType>* loadNetwork(const std::string& filename) {
-//         std::ifstream file(filename);
-//         if (!file.is_open()) throw std::runtime_error("Failed to open file: " + filename);
-//         json jNet;
-//         file >> jNet;
-//         file.close();
-//
-//         auto net = new NeuralNetwork<InputType>();
-//         net->learningRate = jNet["learningRate"];
-//         for (auto& layerJson : jNet["layers"]) {
-//             void* l = deserializeLayer(layerJson);
-//             if (l)
-//                 net->add(static_cast<Layer*>(l));
-//         }
-//         return net;
-//     }
-// };
-//
-// #endif //RECNN_MODEL_SERIALIZE_H
+#ifndef RECNN_MODEL_SERIALIZE_H
+#define RECNN_MODEL_SERIALIZE_H
+
+#include <fstream>
+#include <stdexcept>
+#include <string>
+#include <vector>
+#include <filesystem>
+#include "../Utils/json.hpp"
+#include "../Component/Matrix.h"
+#include "Layers/ConvolutionLayer.h"
+#include "Layers/MaxPoolingLayer.h"
+#include "Layers/FClayer.h"
+#include "TommyDatNeuralNet/NeuralNetwork.h"
+
+using json = nlohmann::json;
+using namespace TommyDat;
+
+class ModelSerialize {
+public:
+
+    // --- Matrix -> JSON ---
+    template<typename T>
+    static json MatrixToJson(const Matrix<T>& mat) {
+        json j;
+        dim3 d = mat.getDim();
+        j["size3D"] = d.x;
+        j["rows"] = d.y;
+        j["cols"] = d.z;
+        int len = mat.getLen();
+        std::vector<T> data;
+        data.reserve(len);
+        for (int i = 0; i < len; ++i) {
+            data.push_back(mat.getFlatten(static_cast<unsigned int>(i)));
+        }
+        j["data"] = std::move(data);
+        return j;
+    }
+
+    // --- JSON -> Matrix ---
+    template<typename T>
+    static Matrix<T> loadMatrix(const json& j) {
+        if (j.is_null()) throw std::runtime_error("loadMatrix: null json");
+
+        int size3D = j.value("size3D", 1);
+        int rows   = j.value("rows", 1);
+        int cols   = j.value("cols", 1);
+        std::vector<T> vec = j.at("data").get<std::vector<T>>();
+
+        Matrix<T> m(size3D, rows, cols);
+
+        for (int i = 0; i < (int)vec.size(); ++i) {
+            m.setFlatten(i, vec[i]);
+        }
+
+        return m;
+    }
+
+
+
+    // --- helpers for activation enum ---
+    static std::string activationToString(EnumActivationType a) {
+        switch (a) {
+            case EnumActivationType::ReLU: return "ReLU";
+            case EnumActivationType::softMax: return "softMax";
+            default: return "unknown";
+        }
+    }
+    static EnumActivationType stringToActivation(const std::string& s) {
+        if (s == "softMax") return EnumActivationType::softMax;
+        return EnumActivationType::ReLU;
+    }
+
+    // --- serialize one layer (value-style JSON object) ---
+    static json serializeLayer(const Layer* layer) {
+        json j;
+        if (auto conv = dynamic_cast<const ConvolutionLayer*>(layer)) {
+            j["type"] = "ConvolutionLayer";
+            j["inChannel"] = conv->getInChannel();    // if inChannel private, add getter getInChannel()
+            j["outChannel"] = conv->getOutChannel();  // if private, add getter getOutChannel()
+            j["kernelSize"] = conv->getKernelSize();  // or add getKernelSize()
+            j["stride"] = conv->getStride();
+
+            Matrix<float>* km = conv->getKernelMatrix(); // safe pointer (may be nullptr)
+            if (km != nullptr) j["kernel"] = MatrixToJson(*km);
+            else j["kernel"] = nullptr;
+        }
+        else if (auto pool = dynamic_cast<const MaxPoolingLayer*>(layer)) {
+            j["type"] = "MaxPoolingLayer";
+            j["size"] = pool->getSize();
+            j["stride"] = pool->getStride();
+        }
+        else if (auto fc = dynamic_cast<const FClayer*>(layer)) {
+            j["type"] = "FClayer";
+            j["dense"] = fc->getDense();
+            j["activation"] = activationToString(fc->getActivationType());
+            j["isFirst"] = fc->isFirst();
+
+            Matrix<float>* w = fc->getWeightMatrix();
+            Matrix<float>* b = fc->getBiasMatrix();
+            j["weight"] = (w ? MatrixToJson(*w) : json(nullptr));
+            j["bias"]   = (b ? MatrixToJson(*b) : json(nullptr));
+        }
+        else {
+            j["type"] = "Unknown";
+        }
+        return j;
+    }
+
+    // --- save whole network ---
+    template<typename InputType>
+    static void saveNetwork(const NeuralNetwork<InputType>& net, const std::string& filename) {
+        json jNet;
+        jNet["learningRate"] = net.learningRate;
+        jNet["layers"] = json::array();
+        for (auto l : net.layers) {
+            jNet["layers"].push_back(serializeLayer(l));
+        }
+        // ensure parent directories exist
+        std::filesystem::path p(filename);
+        if (p.has_parent_path()) std::filesystem::create_directories(p.parent_path());
+        std::ofstream ofs(filename, std::ios::binary);
+        if (!ofs.is_open()) throw std::runtime_error("Cannot open file for write: " + filename);
+        ofs << jNet.dump(4);
+        ofs.close();
+    }
+
+    // --- deserialize one layer (create proper object safely) ---
+    static Layer* deserializeLayer(const json& j) {
+        std::string type = j.at("type").get<std::string>();
+
+        if (type == "ConvolutionLayer") {
+            // read essential metadata
+            int inC = j.value("inChannel", 0);
+            int outC = j.value("outChannel", 0);
+            int ksize = j.value("kernelSize", 0);
+            int stride = j.value("stride", 1);
+
+            // construct with full constructor so kernelList is allocated
+            ConvolutionLayer* conv = new ConvolutionLayer(inC, outC, ksize, stride);
+
+            if (j.contains("kernel") && !j["kernel"].is_null()) {
+                Matrix<float> km = loadMatrix<float>(j["kernel"]);
+                conv->setKernelMatrix(km); // safe setter (allocates)
+            }
+            return conv;
+        }
+        else if (type == "MaxPoolingLayer") {
+            int size = j.value("size", 2);
+            int stride = j.value("stride", 2);
+            MaxPoolingLayer* pool = new MaxPoolingLayer(stride, size);
+            return pool;
+        }
+        else if (type == "FClayer") {
+            int dense = j.value("dense", 0);
+            std::string act = j.value("activation", std::string("ReLU"));
+            bool isFirst = j.value("isFirst", false);
+
+            FClayer* fc = new FClayer(dense, stringToActivation(act), isFirst);
+
+            if (j.contains("weight") && !j["weight"].is_null()) {
+                Matrix<float> w = loadMatrix<float>(j["weight"]);
+                fc->setWeightMatrix(w);
+            }
+            if (j.contains("bias") && !j["bias"].is_null()) {
+                Matrix<float> b = loadMatrix<float>(j["bias"]);
+                fc->setBiasMatrix(b);
+            }
+            return fc;
+        }
+
+        return nullptr;
+    }
+
+    // --- load whole network ---
+    template<typename InputType>
+    static NeuralNetwork<InputType>* loadNetwork(const std::string& filename) {
+        std::ifstream ifs(filename, std::ios::binary);
+        if (!ifs.is_open()) throw std::runtime_error("Cannot open file for read: " + filename);
+        json jNet;
+        ifs >> jNet;
+        ifs.close();
+
+        auto net = new NeuralNetwork<InputType>();
+        net->learningRate = jNet.value("learningRate", net->learningRate);
+
+        for (auto& lj : jNet.at("layers")) {
+            Layer* l = deserializeLayer(lj);
+            if (l) net->add(l);
+        }
+        return net;
+    }
+};
+
+#endif // RECNN_MODEL_SERIALIZE_H

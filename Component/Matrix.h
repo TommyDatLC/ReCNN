@@ -30,6 +30,13 @@ namespace TommyDat{
                 memcpy(matrixFlatten, B.flatten(), sizeof(T) * lenFlattenCache);
             }
 
+            Matrix(const Matrix& B) {
+                SetDim(B.size3D, B.n, B.m);
+                matrixFlatten = new T[lenFlattenCache];
+                memcpy(matrixFlatten, B.flatten(), sizeof(T) * lenFlattenCache);
+            }
+
+
             Matrix(int size3D,int N,int M) {
                 SetDim(size3D,N,M);
                 matrixFlatten = new T[lenFlattenCache];
@@ -112,7 +119,7 @@ namespace TommyDat{
 
             // --- END new constructor ---
 
-            T* flatten() {
+            T* flatten() const{
                 return matrixFlatten;
             }
 
@@ -124,7 +131,7 @@ namespace TommyDat{
                 matrixFlatten[id] = val;
             }
 
-            T get(uint id3d,uint x,uint y) {
+            T get(uint id3d,uint x,uint y) const{
                 checkValidID(x,y);
                 return matrixFlatten[id3d * m * n + x * m + y];
             }
@@ -187,7 +194,7 @@ namespace TommyDat{
                 return  Matrix<T>(rawResult,size3D,n,m);
             }
             // the same with toString() function in java
-            friend std::ostream& operator<<(std::ostream& os, Matrix& a) {
+            friend std::ostream& operator<<(std::ostream& os,const Matrix& a) {
                 os << " size:" << a.size3D << 'x' << a.n << 'x' << a.m << '\n';
                 for (int s = 0 ;s < a.size3D;s++) {
                     os << "matrix:" << s << '\n';
@@ -298,11 +305,11 @@ namespace TommyDat{
 
 
 
-        private:
+        public:
             T* matrixFlatten = nullptr;
             int n=0,m=0,size3D=0;
             int lenFlattenCache = 0;
-            void checkValidID(uint x,uint y) {
+            void checkValidID(uint x,uint y) const{
                 if (x >= n || y >= m)
                     throw std::runtime_error("out of bound");
             }

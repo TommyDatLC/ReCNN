@@ -10,14 +10,95 @@
 #include "Component/TommyDatNeuralNet/NeuralInput.h"
 #include "Component/Serialize.h"
 
+
 #include "Component/TommyDatNeuralNet/NeuralNetwork.h"
 #include  "Utils/File.h"
 
 
 using namespace std;
-
+namespace fs = std::filesystem;
 using namespace TommyDat;
 
+// === HÀM PHỤ ===
+bool hasImageExtension(const string& filename) {
+    string ext;
+    size_t dotPos = filename.find_last_of(".");
+    if (dotPos == string::npos) return false;
+    ext = filename.substr(dotPos + 1);
+
+    // Chuyển về chữ thường để so sánh
+    transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+    return (ext == "jpg" || ext == "jpeg" || ext == "png");
+}
+
+// === HÀM ĐỌC THƯ MỤC ẢNH ===
+vector<NeuralInput> ReadImageFolder(const string& folderPath, int label) {
+    vector<NeuralInput> res;
+
+    if (!fs::exists(folderPath)) {
+        cerr << "Folder not found: " << folderPath << endl;
+        return res;
+    }
+
+    for (const auto& entry : fs::directory_iterator(folderPath)) {
+        if (entry.is_regular_file()) {
+            string path = entry.path().string();
+            if (hasImageExtension(path)) {
+                try {
+                    NeuralInput a(path);
+                    a.lable = label;
+                    res.push_back(a);
+                } catch (const exception& e) {
+                    cerr << "Error loading " << path << ": " << e.what() << endl;
+                }
+            }
+        }
+    }
+
+    return res;
+}
+
+// === HÀM ĐỌC ẢNH 16x16 ===
+vector<NeuralInput> ReadImage16x16() {
+    vector<NeuralInput> res;
+
+    cout << "Loading 16x16 images...\n";
+
+    string catPath = "./Dataset/cat/16x16";
+    string dogPath = "./Dataset/dog/16x16";
+
+    vector<NeuralInput> cats = ReadImageFolder(catPath, 0);
+    vector<NeuralInput> dogs = ReadImageFolder(dogPath, 1);
+
+    res.insert(res.end(), cats.begin(), cats.end());
+    res.insert(res.end(), dogs.begin(), dogs.end());
+
+    cout << "Loaded " << res.size() << " images (16x16): "
+         << cats.size() << " cats, " << dogs.size() << " dogs\n";
+
+    return res;
+}
+
+// === HÀM ĐỌC ẢNH 400x400 ===
+vector<NeuralInput> ReadImage400x400() {
+    vector<NeuralInput> res;
+
+    cout << "Loading 400x400 images...\n";
+
+    string catPath = "./Dataset/cat/400x400";
+    string dogPath = "./Dataset/dog/400x400";
+
+    vector<NeuralInput> cats = ReadImageFolder(catPath, 0);
+    vector<NeuralInput> dogs = ReadImageFolder(dogPath, 1);
+
+    res.insert(res.end(), cats.begin(), cats.end());
+    res.insert(res.end(), dogs.begin(), dogs.end());
+
+    cout << "Loaded " << res.size() << " images (400x400): "
+         << cats.size() << " cats, " << dogs.size() << " dogs\n";
+
+    return res;
+}
 
 // ============================================
 // MAIN
@@ -67,7 +148,7 @@ int main() {
         auto layer2 = MaxPoolingLayer(2, 2);
         auto fc1 = FClayer(6 * 4 * 4, EnumActivationType::ReLU,true);
         auto fc2 = FClayer( 16, EnumActivationType::ReLU);
-        auto output = FClayer(outputNeuron, EnumActivationType::softMax);
+        auto output = FClayer(2, EnumActivationType::softMax);
         net.add(&layer1);
         net.add(&layer2);
         net.add(&fc1);
@@ -78,7 +159,7 @@ int main() {
         output.init();
         // Matrix loss(1,1,2,0.f);
         // loss.set(0,0,1,-1);
-        int n = 3000;
+        int n = 1000;
 
         // NeuralInput a;
         // a.lable = 1;
@@ -98,7 +179,7 @@ int main() {
                      totalLoss += net.getError();
              }
                  if (totalLoss != 0) {
-                     cout << i  << ":loss:" << totalLoss << '\n';
+                     cout << "loss:" << totalLoss << '\n';
                 //  auto t = net.getPredictResult();
                 // std::cout << "Output Matrix" <<
                 //     *(Matrix<float>*)t ;
@@ -139,13 +220,11 @@ int main() {
         //
         // // ============ TRAINING ============
 
-        // // ============ SAVE MODEL ==========
 
-        // std::filesystem::create_directories("ReCNN/Models");
-        //
-        // // save the network to JSON
-        // ModelSerialize::saveNetwork(net, "ReCNN/Models/mymodel.json");
-        //
-        // std::cout << "Model saved to ReCNN/Models/mymodel.json\n";
+        auto* reloadedNet = ModelSerialize::loadNetwork<float>("../Models/mymodel.json");
+        std::cout << " Model loaded successfully\n";
 
+        delete reloadedNet;
+        return 0;
+    }
 }

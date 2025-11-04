@@ -11,6 +11,8 @@
 #include "../EnumActivationType.h"
 #include <cmath>
 #include <iostream>
+#include "MaxPoolingLayer.h"
+#include "ConvolutionLayer.h"
 
 namespace TommyDat {
     class FClayer : public Layer {
@@ -55,7 +57,7 @@ namespace TommyDat {
         }
 
         // Constructor
-        int getDense() { return _dense; }
+        int getDense() const{ return _dense; }
         FClayer(int dense, EnumActivationType actType = EnumActivationType::ReLU,bool first = false)
         {
             _dense = dense;
@@ -63,18 +65,60 @@ namespace TommyDat {
             _isFirst = first;
             activationType = actType;
           //  std::cout << "FClayer initialized: " << inputSize << " -> " << outputSize << std::endl;
+            WeightMatrix = nullptr;
+            BiasMatrix = nullptr;
         }
+
+        Matrix<float>* getWeightMatrix() const { return WeightMatrix; }
+        Matrix<float>* getBiasMatrix() const { return BiasMatrix; }
+        EnumActivationType getActivationType() const { return activationType; }
+        bool isFirst() const { return _isFirst; }
+
+        void setWeightMatrix(const Matrix<float>& mat) {
+            if (WeightMatrix) delete WeightMatrix;
+            WeightMatrix = new Matrix<float>(mat);
+        }
+
+        void setBiasMatrix(const Matrix<float>& mat) {
+            if (BiasMatrix) delete BiasMatrix;
+            BiasMatrix = new Matrix<float>(mat);
+        }
+
+        int getOutputSizeFlattened() const override {
+            return _dense; // output is _dense
+        }
+
         void init() {
-            if (_isFirst) {
-                return;
+            if (_isFirst) return; // input layer already defined
+
+            int inputSize = 0;
+
+            if (!lastLayer) {
+                throw std::runtime_error("FClayer::init() called with no previous layer");
             }
-            FClayer* lastFcLayer =  dynamic_cast<FClayer*>(lastLayer );
-            WeightMatrix =  new Matrix<float>(1,_dense,lastFcLayer->getDense());
-            BiasMatrix = new  Matrix<float>(1, 1, _dense);
 
-         //   std::cout << *BiasMatrix << std::endl;
+            // Determine input size based on previous layer type
+            if (auto lastFc = dynamic_cast<FClayer*>(lastLayer)) {
+                inputSize = lastFc->getDense();  // last FC layer neurons
+            } else if (auto lastPool = dynamic_cast<MaxPoolingLayer*>(lastLayer)) {
+                inputSize = lastPool->getOutputSizeFlattened(); // flattened output
+            } else if (auto lastConv = dynamic_cast<ConvolutionLayer*>(lastLayer)) {
+                inputSize = lastConv->getOutputSizeFlattened(); // flattened output
+            } else {
+                throw std::runtime_error("Unsupported previous layer type in FClayer::init()");
+            }
 
+            // Allocate weight and bias matrices
+            if (WeightMatrix) delete WeightMatrix;
+            if (BiasMatrix) delete BiasMatrix;
+
+            // Correct shape: rows = neurons, cols = input size
+            WeightMatrix = new Matrix<float>(1, _dense, inputSize);
+            BiasMatrix = new Matrix<float>(1, 1, _dense);
         }
+
+
+
         // Destructor
         // ~FClayer() {
         //     delete WeightMatrix;
@@ -88,11 +132,14 @@ namespace TommyDat {
         void inference(void* ptr_lastLayerInput) override {
 
     if (_isFirst) {
+        if (!ptr_lastLayerInput)
+            throw std::runtime_error("First layer input is null");
+
         auto tracebackableMaxpooling = static_cast<Matrix<Tracebackable<float>>*>(ptr_lastLayerInput);
         auto floatMaxPoolingOutput = toValueMatrix(*tracebackableMaxpooling);
-        if (floatMaxPoolingOutput.getLen() != _dense) {
-            throw std::runtime_error("_dense of this layer is not equal to max pooling output size");
-        }
+        // if (floatMaxPoolingOutput.getLen() != _dense) {
+        //     throw std::runtime_error("_dense of this layer is not equal to max pooling output size");
+        // }
         floatMaxPoolingOutput.reShape(1,1,_dense);
        // std::cout << "INPUT FIRST LAYER" << floatMaxPoolingOutput;
         nextLayer->inference(&floatMaxPoolingOutput);

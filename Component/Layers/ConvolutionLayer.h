@@ -18,6 +18,9 @@ namespace TommyDat {
         int outChannel;
         int kernelSize;
         int stride;
+
+        int inputHeight = 0;
+        int inputWidth  = 0;
 //
         Matrix<float>* kernelList;
 
@@ -47,13 +50,48 @@ namespace TommyDat {
             stride = s;
         }
 
-        Matrix<float>& getWeightMatrix() const {
-            return *kernelList;
+        Matrix<float>* getKernelMatrix() const {
+            return kernelList;
         }
 
-        void setWeightMatrix(const Matrix<float>& mat) {
-            delete kernelList;
-            *kernelList = mat;
+        void setKernelMatrix(const Matrix<float>& mat) {
+            if (kernelList != nullptr) {
+                delete kernelList;
+            }
+            kernelList = new Matrix<float>(mat); // allocate fresh copy
+        }
+
+        // GETTER SETTER for serializing
+        int getInChannel() const {
+            return inChannel;
+        }
+        int getOutChannel() const {
+            return outChannel;
+        }
+        int getKernelSize() const {
+            return kernelSize;
+        }
+
+        //Input shape for easier image loads
+        int getInputHeight() const {
+            return inputHeight;
+        }
+
+        int getInputWidth() const { return
+            inputWidth; }
+
+        void setInputShape(int h, int w) {
+            inputHeight = h;
+            inputWidth = w;
+        }
+
+        int getOutputSizeFlattened() const override {
+            if (inputHeight == 0 || inputWidth == 0)
+                throw std::runtime_error("ConvolutionLayer: input shape not set");
+
+            int H_out = (inputHeight - kernelSize) / stride + 1;
+            int W_out = (inputWidth - kernelSize) / stride + 1;
+            return outChannel * H_out * W_out;
         }
 
         void inference(void* ptr_lastLayerInput) override {

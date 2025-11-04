@@ -29,7 +29,7 @@ namespace TommyDat {
 
         }
 
-        void* getOutActivation() {
+        void* getOutActivation() const{
             return outActivation;
         }
         template <typename T>
@@ -53,6 +53,8 @@ namespace TommyDat {
 
         virtual void inference(void* lastLayerInput) = 0;
         virtual void backward(void* nextLayerInput,float learningRate) = 0;
+        virtual int getOutputSizeFlattened() const = 0;
+
     protected:
         Layer* nextLayer = nullptr;
         Layer* lastLayer = nullptr;
