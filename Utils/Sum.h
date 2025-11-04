@@ -35,6 +35,10 @@ template <typename T >
 T CallGPUSum(T *input,int length)
 {
 
+    if (length == 1) {
+        return input[0];
+
+    }
     T *h_output = new T[length];
     int outputLength = length;
     T *d_input = MallocAndCopyToDevice(input,length);
@@ -51,7 +55,6 @@ T CallGPUSum(T *input,int length)
         CUDA_CHECK(cudaGetLastError());
         outputLength = blocks;
     }
-
     CopyToHost(h_output,d_output,length);
     cudaFree(d_input);
     cudaFree(d_output);

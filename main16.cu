@@ -1,112 +1,190 @@
 #include <iostream>
-#include <filesystem>
 #include <vector>
 #include <string>
-#include "Component/Serialize.h"
-#include "Component/Matrix.h"
+#include <filesystem>
+#include <algorithm>
+
 #include "Component/Layers/ConvolutionLayer.h"
+#include "Component/Layers/FClayer.h"
 #include "Component/Layers/MaxPoolingLayer.h"
 #include "Component/TommyDatNeuralNet/NeuralInput.h"
+
+
 #include "Component/TommyDatNeuralNet/NeuralNetwork.h"
 
+
+
 using namespace std;
-using namespace TommyDat;
 namespace fs = std::filesystem;
+using namespace TommyDat;
 
-// minimal dataset loader
-vector<NeuralInput> loadDataset(const string& datasetRoot) {
-vector<NeuralInput> dataset;
+// === HÀM PHỤ ===
+bool hasImageExtension(const string& filename) {
+    string ext;
+    size_t dotPos = filename.find_last_of(".");
+    if (dotPos == string::npos) return false;
+    ext = filename.substr(dotPos + 1);
 
-        int labelId = 0;
+    // Chuyển về chữ thường để so sánh
+    transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+    return (ext == "jpg" || ext == "jpeg" || ext == "png");
+}
 
-        // iterate over class folders (e.g., "cat", "dog")
-        for (auto& classDir : fs::directory_iterator(datasetRoot)) {
-            if (!classDir.is_directory()) continue;
+// === HÀM ĐỌC THƯ MỤC ẢNH ===
+vector<NeuralInput> ReadImageFolder(const string& folderPath, int label) {
+    vector<NeuralInput> res;
 
-            // iterate subfolders in class folder and pick only "16x16-*" folders
-            for (auto& subDir : fs::directory_iterator(classDir.path())) {
-                if (!subDir.is_directory()) continue;
+    if (!fs::exists(folderPath)) {
+        cerr << "Folder not found: " << folderPath << endl;
+        return res;
+    }
 
-                string subName = subDir.path().filename().string();
-                if (subName.size() >= 6 && subName.compare(0, 6, "16x16-") == 0) {
-                    // iterate files in the 16x16-* folder
-                    for (auto& imgFile : fs::directory_iterator(subDir.path())) {
-                        if (!imgFile.is_regular_file()) continue;
-
-                        string ext = imgFile.path().extension().string();
-                        transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
-                        if (ext != ".png" && ext != ".jpg" && ext != ".jpeg") continue;
-
-                        NeuralInput input(imgFile.path().string());
-                        input.lable = labelId;  // assign numeric label
-                        dataset.push_back(input);
-                    }
+    for (const auto& entry : fs::directory_iterator(folderPath)) {
+        if (entry.is_regular_file()) {
+            string path = entry.path().string();
+            if (hasImageExtension(path)) {
+                try {
+                    NeuralInput a(path);
+                    a.lable = label;
+                    res.push_back(a);
+                } catch (const exception& e) {
+                    cerr << "Error loading " << path << ": " << e.what() << endl;
                 }
             }
-
-            labelId++;  // increment label per class
         }
+    }
 
-        return dataset;
+    return res;
+}
 
-        }
+// === HÀM ĐỌC ẢNH 16x16 ===
+vector<NeuralInput> ReadImage16x16() {
+    vector<NeuralInput> res;
 
+    cout << "Loading 16x16 images...\n";
 
+    string catPath = "./Dataset/cat/16x16";
+    string dogPath = "./Dataset/dog/16x16";
+
+    vector<NeuralInput> cats = ReadImageFolder(catPath, 0);
+    vector<NeuralInput> dogs = ReadImageFolder(dogPath, 1);
+
+    res.insert(res.end(), cats.begin(), cats.end());
+    res.insert(res.end(), dogs.begin(), dogs.end());
+
+    cout << "Loaded " << res.size() << " images (16x16): "
+         << cats.size() << " cats, " << dogs.size() << " dogs\n";
+
+    return res;
+}
+
+// === HÀM ĐỌC ẢNH 400x400 ===
+vector<NeuralInput> ReadImage400x400() {
+    vector<NeuralInput> res;
+
+    cout << "Loading 400x400 images...\n";
+
+    string catPath = "./Dataset/cat/400x400";
+    string dogPath = "./Dataset/dog/400x400";
+
+    vector<NeuralInput> cats = ReadImageFolder(catPath, 0);
+    vector<NeuralInput> dogs = ReadImageFolder(dogPath, 1);
+
+    res.insert(res.end(), cats.begin(), cats.end());
+    res.insert(res.end(), dogs.begin(), dogs.end());
+
+    cout << "Loaded " << res.size() << " images (400x400): "
+         << cats.size() << " cats, " << dogs.size() << " dogs\n";
+
+    return res;
+}
+
+// ============================================
+// MAIN
+// ============================================
 int main() {
-try {
-cout << "=== Start the model ====\n";
+    //     Matrix<Tracebackable<float>> a1 = Matrix<Tracebackable<float>>(3,16,16);
+    // Matrix<Tracebackable<float>> b1 = Matrix<Tracebackable<float>>(3,16,16);
+    // auto test  =a1 - b1;
 
-    // Create a simple neural network
-    NeuralNetwork<NeuralInput> net;
-    net.learningRate = 0.1;
+        // Matrix<float> ker = Matrix<float>(6,3,3);
+        // cout << *a.convolution(ker,2);
+        // Matrix a = Matrix<float>(1,16,16);
+        // auto test  =a.transpose();
+        //    cout << a <<  test;
+    // cout << a;
+    //     cout << "========================================\n";
+    //     cout << "   Cat vs Dog CNN Classifier\n";
+    //     cout << "========================================\n\n";
+        NeuralNetwork<NeuralInput> net;
+        net.learningRate = 0.01f;
+        //
+        // // ============ LOAD IMAGES ============
 
-    auto conv1 = ConvolutionLayer(3, 6, 3, 1);
-    auto pool1 = MaxPoolingLayer(2, 2);
-    auto conv2 = ConvolutionLayer(6, 12, 3, 1);
-    auto pool2 = MaxPoolingLayer(2, 2);
+        bool useSmallImage = true;  // true = 16x16, false = 400x400
+        vector<NeuralInput> trainingData;
+        //
+        if (useSmallImage) {
+            trainingData = ReadImage16x16();
+        } else {
+            trainingData = ReadImage400x400();
+        }
+        //
+        //
+        // cout << trainingData.size() << endl;
+        //
+        // // ============ BUILD CNN ============
+        // cout << "Building CNN architecture...\n";
+        //
+        auto layer1 = ConvolutionLayer(3, 6, 3, 2);
+        auto layer2 = MaxPoolingLayer(2, 2);
+        auto fc1 = FClayer(6 * 4 * 4, EnumActivationType::ReLU,true);
+        auto fc2 = FClayer( 16, EnumActivationType::ReLU);
+        auto output = FClayer(2, EnumActivationType::softMax);
+        net.add(&layer1);
+        net.add(&layer2);
+        net.add(&fc1);
+        net.add(&fc2);
+        net.add(&output);
+        fc1.init();
+        fc2.init();
+        output.init();
+        // Matrix loss(1,1,2,0.f);
+        // loss.set(0,0,1,-1);
+        int n = 1000;
 
-    net.add(&conv1);
-    net.add(&pool1);
-    net.add(&conv2);
-    net.add(&pool2);
+        // NeuralInput a;
+        // a.lable = 1;
+        // a.data = new Matrix<Tracebackable<float>>(1,1,10);
+        //
+        // net.predict(&a);
 
-    cout << "Network built with " << net.getSize() << " layers\n";
+         for (int i = 0;i < n;i++) {
 
-    // Load dataset
-    string datasetPath = "../Dataset";  // adjust path
-    auto dataset = loadDataset(datasetPath);
-    cout << "Loaded " << dataset.size() << " images.\n";
+            float totalLoss = 0;
+             for (int j = 0;j < trainingData.size();j++) {
+                // cout << "EPOCH " << i << " " << j << '\n';
+                 net.predict(&trainingData[i]);
+                 net.backward();
 
-    // Run forward/backward for each sample
-    for (auto& sample : dataset) {
-        net.predict(&sample);
-        auto output = net.getPredictResult();
-        net.backward();
-        cout << "Processed sample with label=" << sample.lable
-             << " , error=" << net.CaculateError() << "\n";
-    }
+                 if (i % 10 == 0)
+                     totalLoss += net.getError();
+             }
+                 if (totalLoss != 0) {
+                     cout << "loss:" << totalLoss << '\n';
+                //  auto t = net.getPredictResult();
+                // std::cout << "Output Matrix" <<
+                //     *(Matrix<float>*)t ;
 
-    // Save network
-    fs::create_directories("Models");
-    ModelSerialize::saveNetwork(net, "Models/mymodel.json");
-    cout << "Network saved.\n";
+             }
+             //0.666687 0.333313
+             //0.686901 0.313099
+         }
 
-    // Load network
-    auto loadedNet = ModelSerialize::loadNetwork<NeuralInput>("Models/mymodel.json");
-    cout << "Network loaded.\n";
 
-    // Run inference with loaded network
-    for (auto& sample : dataset) {
-        loadedNet->predict(&sample);
-        auto loadedOutput = loadedNet->getPredictResult();
-    }
+        cout << "Architecture: Input → Conv(3→6) → Pool → FC(96→32) → FC(32→16) → Output(2)\n\n";
+        //
+        // // ============ TRAINING ============
 
-    cout << "=== End of ReCNN Test ===\n";
-}
-catch (const exception& e) {
-    cerr << "Error: " << e.what() << "\n";
-}
-
-return 0;
 
 }
