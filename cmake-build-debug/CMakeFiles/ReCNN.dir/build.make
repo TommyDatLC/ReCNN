@@ -72,29 +72,30 @@ include CMakeFiles/ReCNN.dir/flags.make
 CMakeFiles/ReCNN.dir/codegen:
 .PHONY : CMakeFiles/ReCNN.dir/codegen
 
-CMakeFiles/ReCNN.dir/main.cu.o: CMakeFiles/ReCNN.dir/flags.make
-CMakeFiles/ReCNN.dir/main.cu.o: /home/tommydatlc/Documents/Code/CUDA/ReCNN/main.cu
-CMakeFiles/ReCNN.dir/main.cu.o: CMakeFiles/ReCNN.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/tommydatlc/Documents/Code/CUDA/ReCNN/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CUDA object CMakeFiles/ReCNN.dir/main.cu.o"
-	/usr/bin/nvcc -forward-unknown-to-host-compiler $(CUDA_DEFINES) $(CUDA_INCLUDES) $(CUDA_FLAGS) -MD -MT CMakeFiles/ReCNN.dir/main.cu.o -MF CMakeFiles/ReCNN.dir/main.cu.o.d -x cu -rdc=true -c /home/tommydatlc/Documents/Code/CUDA/ReCNN/main.cu -o CMakeFiles/ReCNN.dir/main.cu.o
+CMakeFiles/ReCNN.dir/main16.cu.o: CMakeFiles/ReCNN.dir/flags.make
+CMakeFiles/ReCNN.dir/main16.cu.o: /home/tommydatlc/Documents/Code/CUDA/ReCNN/main16.cu
+CMakeFiles/ReCNN.dir/main16.cu.o: CMakeFiles/ReCNN.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/tommydatlc/Documents/Code/CUDA/ReCNN/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CUDA object CMakeFiles/ReCNN.dir/main16.cu.o"
+	/usr/bin/nvcc -forward-unknown-to-host-compiler $(CUDA_DEFINES) $(CUDA_INCLUDES) $(CUDA_FLAGS) -MD -MT CMakeFiles/ReCNN.dir/main16.cu.o -MF CMakeFiles/ReCNN.dir/main16.cu.o.d -x cu -rdc=true -c /home/tommydatlc/Documents/Code/CUDA/ReCNN/main16.cu -o CMakeFiles/ReCNN.dir/main16.cu.o
 
-CMakeFiles/ReCNN.dir/main.cu.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CUDA source to CMakeFiles/ReCNN.dir/main.cu.i"
+CMakeFiles/ReCNN.dir/main16.cu.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CUDA source to CMakeFiles/ReCNN.dir/main16.cu.i"
 	$(CMAKE_COMMAND) -E cmake_unimplemented_variable CMAKE_CUDA_CREATE_PREPROCESSED_SOURCE
 
-CMakeFiles/ReCNN.dir/main.cu.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CUDA source to assembly CMakeFiles/ReCNN.dir/main.cu.s"
+CMakeFiles/ReCNN.dir/main16.cu.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CUDA source to assembly CMakeFiles/ReCNN.dir/main16.cu.s"
 	$(CMAKE_COMMAND) -E cmake_unimplemented_variable CMAKE_CUDA_CREATE_ASSEMBLY_SOURCE
 
 # Object files for target ReCNN
 ReCNN_OBJECTS = \
-"CMakeFiles/ReCNN.dir/main.cu.o"
+"CMakeFiles/ReCNN.dir/main16.cu.o"
 
 # External object files for target ReCNN
 ReCNN_EXTERNAL_OBJECTS =
 
-CMakeFiles/ReCNN.dir/cmake_device_link.o: CMakeFiles/ReCNN.dir/main.cu.o
+CMakeFiles/ReCNN.dir/cmake_device_link.o: CMakeFiles/ReCNN.dir/main16.cu.o
 CMakeFiles/ReCNN.dir/cmake_device_link.o: CMakeFiles/ReCNN.dir/build.make
+CMakeFiles/ReCNN.dir/cmake_device_link.o: CMakeFiles/ReCNN.dir/compiler_depend.ts
 CMakeFiles/ReCNN.dir/cmake_device_link.o: CMakeFiles/ReCNN.dir/deviceLinkLibs.rsp
 CMakeFiles/ReCNN.dir/cmake_device_link.o: CMakeFiles/ReCNN.dir/deviceObjects1.rsp
 CMakeFiles/ReCNN.dir/cmake_device_link.o: CMakeFiles/ReCNN.dir/dlink.txt
@@ -107,13 +108,14 @@ CMakeFiles/ReCNN.dir/build: CMakeFiles/ReCNN.dir/cmake_device_link.o
 
 # Object files for target ReCNN
 ReCNN_OBJECTS = \
-"CMakeFiles/ReCNN.dir/main.cu.o"
+"CMakeFiles/ReCNN.dir/main16.cu.o"
 
 # External object files for target ReCNN
 ReCNN_EXTERNAL_OBJECTS =
 
-ReCNN: CMakeFiles/ReCNN.dir/main.cu.o
+ReCNN: CMakeFiles/ReCNN.dir/main16.cu.o
 ReCNN: CMakeFiles/ReCNN.dir/build.make
+ReCNN: CMakeFiles/ReCNN.dir/compiler_depend.ts
 ReCNN: CMakeFiles/ReCNN.dir/cmake_device_link.o
 ReCNN: CMakeFiles/ReCNN.dir/linkLibs.rsp
 ReCNN: CMakeFiles/ReCNN.dir/objects1.rsp

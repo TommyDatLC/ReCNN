@@ -151,7 +151,7 @@ int main() {
         output.init();
         // Matrix loss(1,1,2,0.f);
         // loss.set(0,0,1,-1);
-        int n = 2000;
+        int n = 1000;
 
         // NeuralInput a;
         // a.lable = 1;

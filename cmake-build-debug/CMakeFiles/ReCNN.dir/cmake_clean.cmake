@@ -1,7 +1,8 @@
 file(REMOVE_RECURSE
+  "CMakeFiles/ReCNN.dir/link.d"
   "CMakeFiles/ReCNN.dir/cmake_device_link.o"
-  "CMakeFiles/ReCNN.dir/main.cu.o"
-  "CMakeFiles/ReCNN.dir/main.cu.o.d"
+  "CMakeFiles/ReCNN.dir/main16.cu.o"
+  "CMakeFiles/ReCNN.dir/main16.cu.o.d"
   "ReCNN"
   "ReCNN.pdb"
 )

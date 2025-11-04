@@ -8,7 +8,8 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
-  "/home/tommydatlc/Documents/Code/CUDA/ReCNN/main.cu" "CMakeFiles/ReCNN.dir/main.cu.o" "gcc" "CMakeFiles/ReCNN.dir/main.cu.o.d"
+  "/home/tommydatlc/Documents/Code/CUDA/ReCNN/main16.cu" "CMakeFiles/ReCNN.dir/main16.cu.o" "gcc" "CMakeFiles/ReCNN.dir/main16.cu.o.d"
+  "" "ReCNN" "gcc" "CMakeFiles/ReCNN.dir/link.d"
   )
 
 # Targets to which this target links which contain Fortran sources.
