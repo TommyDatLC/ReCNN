@@ -57,8 +57,49 @@ vector<NeuralInput> ReadImageFolder(const string& folderPath, int label) {
     return res;
 }
 
-// === HÀM ĐỌC ẢNH 16x16 ===
-vector<NeuralInput> ReadImage16x16() {
+// // === HÀM ĐỌC ẢNH 16x16 ===
+// vector<NeuralInput> ReadImage16x16() {
+//     vector<NeuralInput> res;
+//
+//     cout << "Loading 16x16 images...\n";
+//
+//     string catPath = "./Dataset/cat/16x16";
+//     string dogPath = "./Dataset/dog/16x16";
+//
+//     vector<NeuralInput> cats = ReadImageFolder(catPath, 0);
+//     vector<NeuralInput> dogs = ReadImageFolder(dogPath, 1);
+//
+//     res.insert(res.end(), cats.begin(), cats.end());
+//     res.insert(res.end(), dogs.begin(), dogs.end());
+//
+//     cout << "Loaded " << res.size() << " images (16x16): "
+//          << cats.size() << " cats, " << dogs.size() << " dogs\n";
+//
+//     return res;
+// }
+//
+// // === HÀM ĐỌC ẢNH 400x400 ===
+// vector<NeuralInput> ReadImage400x400() {
+//     vector<NeuralInput> res;
+//
+//     cout << "Loading 400x400 images...\n";
+//
+//     string catPath = "./Dataset/cat/400x400";
+//     string dogPath = "./Dataset/dog/400x400";
+//
+//     vector<NeuralInput> cats = ReadImageFolder(catPath, 0);
+//     vector<NeuralInput> dogs = ReadImageFolder(dogPath, 1);
+//
+//     res.insert(res.end(), cats.begin(), cats.end());
+//     res.insert(res.end(), dogs.begin(), dogs.end());
+//
+//     cout << "Loaded " << res.size() << " images (400x400): "
+//          << cats.size() << " cats, " << dogs.size() << " dogs\n";
+//
+//     return res;
+// }
+// === HÀM ĐỌC ẢNH 16x16 cua Test ===
+vector<NeuralInput> ReadTest1(){
     vector<NeuralInput> res;
 
     cout << "Loading 16x16 images...\n";
@@ -77,15 +118,14 @@ vector<NeuralInput> ReadImage16x16() {
 
     return res;
 }
-
-// === HÀM ĐỌC ẢNH 400x400 ===
-vector<NeuralInput> ReadImage400x400() {
+// === HÀM ĐỌC 400x400 cua Test ===
+vector<NeuralInput> ReadTest2() {
     vector<NeuralInput> res;
 
     cout << "Loading 400x400 images...\n";
 
-    string catPath = "./Dataset/cat/400x400";
-    string dogPath = "./Dataset/dog/400x400";
+    string catPath = "./dataset_split/Cat/400x400";
+    string dogPath = "./dataset_split/Dog/400x400";
 
     vector<NeuralInput> cats = ReadImageFolder(catPath, 0);
     vector<NeuralInput> dogs = ReadImageFolder(dogPath, 1);
@@ -98,6 +138,48 @@ vector<NeuralInput> ReadImage400x400() {
 
     return res;
 }
+// === HÀM ĐỌC ẢNH 16x16 cua Test ===
+vector<NeuralInput> ReadTrain1(){
+    vector<NeuralInput> res;
+
+    cout << "Loading 16x16 images...\n";
+
+    string catPath = "./Dataset/cat/16x16";
+    string dogPath = "./Dataset/dog/16x16";
+
+    vector<NeuralInput> cats = ReadImageFolder(catPath, 0);
+    vector<NeuralInput> dogs = ReadImageFolder(dogPath, 1);
+
+    res.insert(res.end(), cats.begin(), cats.end());
+    res.insert(res.end(), dogs.begin(), dogs.end());
+
+    cout << "Loaded " << res.size() << " images (16x16): "
+         << cats.size() << " cats, " << dogs.size() << " dogs\n";
+
+    return res;
+}
+// === HÀM ĐỌC 400x400 cua Train ===
+vector<NeuralInput> ReadTrain2() {
+    vector<NeuralInput> res;
+
+    cout << "Loading 400x400 images...\n";
+
+    string catPath = "./dataset_split/Cat/400x400";
+    string dogPath = "./dataset_split/Dog/400x400";
+
+    vector<NeuralInput> cats = ReadImageFolder(catPath, 0);
+    vector<NeuralInput> dogs = ReadImageFolder(dogPath, 1);
+
+    res.insert(res.end(), cats.begin(), cats.end());
+    res.insert(res.end(), dogs.begin(), dogs.end());
+
+    cout << "Loaded " << res.size() << " images (400x400): "
+         << cats.size() << " cats, " << dogs.size() << " dogs\n";
+
+    return res;
+}
+
+
 
 // ============================================
 // MAIN
@@ -125,9 +207,9 @@ int main() {
         vector<NeuralInput> trainingData;
         //
         if (useSmallImage) {
-            trainingData = ReadImage16x16();
+            trainingData = ReadTest1();
         } else {
-            trainingData = ReadImage400x400();
+            trainingData = ReadTest2();
         }
         //
         //
