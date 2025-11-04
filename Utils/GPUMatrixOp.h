@@ -44,61 +44,120 @@ T** construct2Dfromflat(T* __restrict__ arr,int n,int m) {
 }
 
 template <typename T>
-__global__ void matrixMulTile(const T* A, const T* B, T* __restrict__ C, int N, int K, int M) {
-    constexpr int TILE = 32;
+__global__ void matrixMulTile(const T* __restrict__ A,
+                              const T* __restrict__ B,
+                              T* __restrict__ C,
+                              int N, int K, int M) {
+    constexpr int TILE = 16; // hoặc 16 để tăng occupancy
     __shared__ T tileA[TILE][TILE];
     __shared__ T tileB[TILE][TILE];
 
     int tx = threadIdx.x; // col within tile
     int ty = threadIdx.y; // row within tile
-    int row = blockIdx.y * TILE + ty; // global row
-    int col = blockIdx.x * TILE + tx; // global col
+    int row = blockIdx.y * TILE + ty; // global row in C
+    int col = blockIdx.x * TILE + tx; // global col in C
 
     T acc = static_cast<T>(0);
     int numPhases = (K + TILE - 1) / TILE;
     for (int ph = 0; ph < numPhases; ++ph) {
-        int aCol = ph * TILE + tx;     // column index in A to load
-        int bRow = ph * TILE + ty;     // row index in B to load
+        int aCol = ph * TILE + tx; // column to read from A
+        int bRow = ph * TILE + ty; // row to read from B
 
-        if (row < N && aCol < K)
+        // load A[row, aCol] -> tileA[ty][tx]
+        if (row < N && aCol < K) {
             tileA[ty][tx] = A[row * K + aCol];
-        else
-            tileA[ty][tx] = 0;
+        } else {
+            tileA[ty][tx] = static_cast<T>(0);
+        }
 
-        if (row < N && aCol < K)
-            tileA[ty][tx] = B[bRow * M + col];
-        else
-            tileA[ty][tx] = 0;
+        // load B[bRow, col] -> tileB[ty][tx]
+        if (bRow < K && col < M) {
+            tileB[ty][tx] = B[bRow * M + col];
+        } else {
+            tileB[ty][tx] = static_cast<T>(0);
+        }
 
         __syncthreads();
-        for (int k = 0; k < TILE; ++k) acc += tileA[ty][k] * tileB[k][tx];
+
+        // multiply accumulate
+#pragma unroll
+        for (int k = 0; k < TILE; ++k) {
+            acc += tileA[ty][k] * tileB[k][tx];
+        }
+
         __syncthreads();
     }
-    if (row < N && col < M) C[row * M + col] = acc;
+
+    if (row < N && col < M) {
+        C[row * M + col] = acc;
+    }
 }
+
 
 
 template <typename T>
-T* CallMatrixMul(T* A, T* B,int HangA,int CotA,int CotB) {
-    T* d_outp,*h_outp = new T[HangA * CotB];
-    T* d_a =    MallocAndCopyToDevice(A,HangA * CotA);
-    T* d_b =  MallocAndCopyToDevice(B,CotA * CotB);
+T* CallMatrixMul(T* A, T* B, int HangA, int CotA, int CotB) {
+    constexpr int TILE = 16; // phải khớp với kernel TILE
+    T* h_outp = nullptr;
+    T* d_a = nullptr;
+    T* d_b = nullptr;
+    T* d_outp = nullptr;
 
-    cudaMalloc(&d_outp,sizeof(T) * HangA * CotB);
-    dim3 block(32, 32);
-    dim3 grid( (CotB + 31) / 32, (HangA + 31) / 32 ); // round-up division
-    matrixMulTile<<<grid,block>>>(d_a, d_b, d_outp,HangA, CotA, CotB);
+    // allocate host output
+    try {
+        h_outp = new T[(size_t)HangA * (size_t)CotB];
+    } catch (...) {
+        // bad_alloc
+        return nullptr;
+    }
 
-    // kiểm tra lỗi kernel và đồng bộ
-    CUDA_CHECK(cudaGetLastError()); // catch launch error
-    CUDA_CHECK(cudaDeviceSynchronize());
+    // allocate+copy device A,B (giả sử MallocAndCopyToDevice kiểm tra lỗi)
+    d_a = MallocAndCopyToDevice(A, (size_t)HangA * (size_t)CotA);
+    if (!d_a) { delete[] h_outp; return nullptr; }
 
-    cudaMemcpy(h_outp,d_outp,sizeof(T) * HangA * CotB,cudaMemcpyDeviceToHost);
+    d_b = MallocAndCopyToDevice(B, (size_t)CotA * (size_t)CotB);
+    if (!d_b) { cudaFree(d_a); delete[] h_outp; return nullptr; }
+
+    // allocate device output
+    size_t outBytes = sizeof(T) * (size_t)HangA * (size_t)CotB;
+    cudaError_t err = cudaMalloc((void**)&d_outp, outBytes);
+    if (err != cudaSuccess) {
+        cudaFree(d_a); cudaFree(d_b); delete[] h_outp;
+        return nullptr;
+    }
+
+    // launch kernel: block must match TILE
+    dim3 block(TILE, TILE);
+    dim3 grid( (CotB + TILE - 1) / TILE, (HangA + TILE - 1) / TILE );
+    matrixMulTile<T><<<grid, block>>>(d_a, d_b, d_outp, HangA, CotA, CotB);
+
+    // check launch & sync
+    err = cudaGetLastError();
+    if (err != cudaSuccess) {
+        cudaFree(d_a); cudaFree(d_b); cudaFree(d_outp); delete[] h_outp;
+        return nullptr;
+    }
+    err = cudaDeviceSynchronize();
+    if (err != cudaSuccess) {
+        cudaFree(d_a); cudaFree(d_b); cudaFree(d_outp); delete[] h_outp;
+        return nullptr;
+    }
+
+    // copy back
+    err = cudaMemcpy(h_outp, d_outp, outBytes, cudaMemcpyDeviceToHost);
+    if (err != cudaSuccess) {
+        cudaFree(d_a); cudaFree(d_b); cudaFree(d_outp); delete[] h_outp;
+        return nullptr;
+    }
+
+    // free device memory
     cudaFree(d_a);
     cudaFree(d_b);
     cudaFree(d_outp);
+
     return h_outp;
 }
+
 #define MAT_OP_ADD 0
 #define MAT_OP_SUBTRACT 1
 #define MAT_OP_MUL 2
@@ -120,7 +179,7 @@ __global__ void GPUmatrixBasicOP(T* __restrict__ A,const T2* __restrict__ B,int 
     }
 }
 template <typename T,typename T2>
-T* CallGPUmatrixBasicOP( T* __restrict__ A, T2* __restrict__ B,int n,char OP) {
+T* CallGPUmatrixBasicOP( T*  A, T2* B,int n,char OP) {
     T* d_A;
     T2 * d_B;
     T* h_outp = new T[n];
@@ -181,9 +240,9 @@ __global__ void GPUConvolution(
 }
 
 template <typename T,typename Tker>
-RawMatrixOutput<T> CallGPUConvolution(T* __restrict__ A
+RawMatrixOutput<T> CallGPUConvolution(T* A
     ,int size3D,int N,int M,
-    Tker* __restrict__ kernel,
+    Tker* kernel,
     int ks,int kn,int km,int stride) {
     int lenKer = kn * km * ks;
     int inChannel = size3D,
@@ -356,52 +415,66 @@ void CallGPUapply(T* __restrict__ A,int n,TdeviceFunc f) {
 // Kernel: out-of-place transpose for each slice s.
 // Input layout (flatten): A[ s * (n*m) + x * m + y ]  where x in [0..n-1], y in [0..m-1]
 // Output layout (flatten): B[ s * (m*n) + y * n + x ]  -> shape (size3D, m, n)
+
+// Kernel (sửa mapping row/col)
 template <typename T>
-__global__ void GPUTranspose3D(const T* __restrict__ A, T* __restrict__ B,
+__global__ void GPUTranspose3D(T* __restrict__ A, T* __restrict__ B,
                                int size3D, int n, int m) {
-    int s = blockIdx.z * blockDim.z + threadIdx.z;
-    int x = blockIdx.y * blockDim.y + threadIdx.y;
-    int y = blockIdx.x * blockDim.x + threadIdx.x;
+    int col = blockIdx.x * blockDim.x + threadIdx.x;  // thứ tự: grid.x chạy theo cột (m)
+    int row = blockIdx.y * blockDim.y + threadIdx.y;  // grid.y chạy theo hàng (n)
+    int s   = blockIdx.z * blockDim.z + threadIdx.z;  // slice
 
-    if (s >= size3D || x >= n || y >= m)
-        return;
+    if (s >= size3D || row >= n || col >= m) return;
 
-    // Gán phần tử (s, x, y) ở A sang (s, y, x) ở B
-    B[s * m * n + y * n + x] = A[s * n * m + x * m + y];
+    // A index: (s, row, col) với layout row-major từng slice: s * (n*m) + row*m + col
+    // B index: (s, col, row) => s * (m*n) + col*n + row
+    B[(size_t)s * (m * n) + (size_t)col * n + row] =
+        A[(size_t)s * (n * m) + (size_t)row * m + col];
 }
-
 template <typename T>
 T* CallGPUTranspose(T* A, int size3D, int n, int m) {
-    int in_len = size3D * n * m;
-    int out_len = size3D * m * n;
+    if (A == nullptr) return nullptr;
 
-    // Cấp phát và copy input lên device
-    T* d_A = MallocAndCopyToDevice(A, in_len);
+    size_t in_len  = (size_t)size3D * n * m;
+    size_t out_len = (size_t)size3D * m * n;
 
-    // Cấp phát vùng nhớ cho output trên device
+    // Device buffers
+    T* d_A = nullptr;
     T* d_B = nullptr;
+    CUDA_CHECK(cudaMalloc(&d_A, sizeof(T) * in_len));
     CUDA_CHECK(cudaMalloc(&d_B, sizeof(T) * out_len));
 
-    // Cấu hình block & grid
-    dim3 threads;
-    dim3 blocks;
-    Caculate3DBlockAndThread(size3D,n,m,blocks,threads);
-    // Gọi kernel
-    GPUTranspose3D<<<blocks, threads>>>(d_A, d_B, size3D, n, m);
+    // Copy input -> device
+    CUDA_CHECK(cudaMemcpy(d_A, A, sizeof(T) * in_len, cudaMemcpyHostToDevice));
+
+    // block/grid: block 16x16, grid covers (m cols, n rows), grid.z = size3D
+    dim3 block(16, 16, 1);
+    dim3 grid( (m + block.x - 1) / block.x,
+               (n + block.y - 1) / block.y,
+               size3D ); // mỗi slice một layer z
+
+    // Launch
+    GPUTranspose3D<<<grid, block>>>(d_A, d_B, size3D, n, m);
+
+    // Kiểm tra lỗi launch và đồng bộ
+    cudaError_t err = cudaGetLastError();
+    if (err != cudaSuccess) {
+        fprintf(stderr, "Kernel launch failed: %s\n", cudaGetErrorString(err));
+        cudaFree(d_A); cudaFree(d_B);
+        return nullptr;
+    }
     CUDA_CHECK(cudaDeviceSynchronize());
 
-    // Cấp phát vùng nhớ host output
+    // Copy result về host
     T* B_host = new T[out_len];
-
-    // Copy từ device về host
-    CopyToHost(B_host, d_B, out_len);
+    CUDA_CHECK(cudaMemcpy(B_host, d_B, sizeof(T) * out_len, cudaMemcpyDeviceToHost));
 
     // Giải phóng GPU memory
     cudaFree(d_A);
     cudaFree(d_B);
 
-    // Trả về con trỏ host chứa ma trận đã transpose
-    return B_host;
+    return B_host; // caller phải delete[] sau khi dùng
 }
+
 
 #endif //RECNN_GPUMATRIXMUL_H

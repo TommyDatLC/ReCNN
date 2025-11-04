@@ -12,9 +12,7 @@
 
 #include "Component/TommyDatNeuralNet/NeuralNetwork.h"
 
-namespace TommyDat {
-    class FCInput;
-}
+
 
 using namespace std;
 namespace fs = std::filesystem;
@@ -105,23 +103,32 @@ vector<NeuralInput> ReadImage400x400() {
 // MAIN
 // ============================================
 int main() {
+    //     Matrix<Tracebackable<float>> a1 = Matrix<Tracebackable<float>>(3,16,16);
+    // Matrix<Tracebackable<float>> b1 = Matrix<Tracebackable<float>>(3,16,16);
+    // auto test  =a1 - b1;
 
-    //     Matrix a = Matrix<float>(1,1,16);
+        // Matrix<float> ker = Matrix<float>(6,3,3);
+        // cout << *a.convolution(ker,2);
+        // Matrix a = Matrix<float>(1,16,16);
+        // auto test  =a.transpose();
+        //    cout << a <<  test;
     // cout << a;
-        // cout << "========================================\n";
-        // cout << "   Cat vs Dog CNN Classifier\n";
-        // cout << "========================================\n\n";
+    //     cout << "========================================\n";
+    //     cout << "   Cat vs Dog CNN Classifier\n";
+    //     cout << "========================================\n\n";
         NeuralNetwork<NeuralInput> net;
+        net.learningRate = 0.01f;
         //
         // // ============ LOAD IMAGES ============
-        // bool useSmallImage = true;  // true = 16x16, false = 400x400
-        // vector<NeuralInput> trainingData;
+
+        bool useSmallImage = true;  // true = 16x16, false = 400x400
+        vector<NeuralInput> trainingData;
         //
-        // if (useSmallImage) {
-        //     trainingData = ReadImage16x16();
-        // } else {
-        //     trainingData = ReadImage400x400();
-        // }
+        if (useSmallImage) {
+            trainingData = ReadImage16x16();
+        } else {
+            trainingData = ReadImage400x400();
+        }
         //
         //
         // cout << trainingData.size() << endl;
@@ -129,26 +136,53 @@ int main() {
         // // ============ BUILD CNN ============
         // cout << "Building CNN architecture...\n";
         //
-        // //auto layer1 = ConvolutionLayer(3, 6, 3, 2);
-        // //auto layer2 = MaxPoolingLayer(2, 2);
-        auto fc1 = FClayer(10, EnumActivationType::ReLU,true);
+        auto layer1 = ConvolutionLayer(3, 6, 3, 2);
+        auto layer2 = MaxPoolingLayer(2, 2);
+        auto fc1 = FClayer(6 * 4 * 4, EnumActivationType::ReLU,true);
         auto fc2 = FClayer( 16, EnumActivationType::ReLU);
         auto output = FClayer(2, EnumActivationType::softMax);
+        net.add(&layer1);
+        net.add(&layer2);
         net.add(&fc1);
         net.add(&fc2);
         net.add(&output);
         fc1.init();
         fc2.init();
         output.init();
-        NeuralInput a;
-        a.lable = 1;
-         a.data = new Matrix<Tracebackable<float>>(1,1,10);
-        net.predict(&a);
-        auto t = output.getOutActivation();
-        std::cout << "OutputMatrix" <<*t ;
+        // Matrix loss(1,1,2,0.f);
+        // loss.set(0,0,1,-1);
+        int n = 2000;
+
+        // NeuralInput a;
+        // a.lable = 1;
+        // a.data = new Matrix<Tracebackable<float>>(1,1,10);
         //
-        //
-        // cout << "Architecture: Input → Conv(3→6) → Pool → FC(96→32) → FC(32→16) → Output(2)\n\n";
+        // net.predict(&a);
+
+         for (int i = 0;i < n;i++) {
+
+            float totalLoss = 0;
+             for (int j = 0;j < trainingData.size();j++) {
+                // cout << "EPOCH " << i << " " << j << '\n';
+                 net.predict(&trainingData[i]);
+                 net.backward();
+
+                 if (i % 10 == 0)
+                     totalLoss += net.getError();
+             }
+                 if (totalLoss != 0) {
+                     cout << "loss:" << totalLoss << '\n';
+                //  auto t = net.getPredictResult();
+                // std::cout << "Output Matrix" <<
+                //     *(Matrix<float>*)t ;
+
+             }
+             //0.666687 0.333313
+             //0.686901 0.313099
+         }
+
+
+        cout << "Architecture: Input → Conv(3→6) → Pool → FC(96→32) → FC(32→16) → Output(2)\n\n";
         //
         // // ============ TRAINING ============
 
