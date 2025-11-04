@@ -19,122 +19,49 @@ using namespace std;
 namespace fs = std::filesystem;
 using namespace TommyDat;
 
-// === HÀM PHỤ ===
-
-// === HÀM ĐỌC THƯ MỤC ẢNH ===
-vector<NeuralInput> ReadImageFolder(const string& folderPath, int label) {
-    vector<NeuralInput> res;
-
-    if (!fs::exists(folderPath)) {
-        cerr << "Folder not found: " << folderPath << endl;
-        return res;
-    }
-
-    for (const auto& entry : fs::directory_iterator(folderPath)) {
-        if (entry.is_regular_file()) {
-            string path = entry.path().string();
-            if (hasImageExtension(path)) {
-                try {
-                    NeuralInput a(path);
-                    a.lable = label;
-                    res.push_back(a);
-                } catch (const exception& e) {
-                    cerr << "Error loading " << path << ": " << e.what() << endl;
-                }
-            }
-        }
-    }
-
-    return res;
-}
-
-// === HÀM ĐỌC ẢNH 16x16 ===
-vector<NeuralInput> ReadImage16x16() {
-    vector<NeuralInput> res;
-
-    cout << "Loading 16x16 images...\n";
-
-    string catPath = "./Dataset/cat/16x16";
-    string dogPath = "./Dataset/dog/16x16";
-
-    vector<NeuralInput> cats = ReadImageFolder(catPath, 0);
-    vector<NeuralInput> dogs = ReadImageFolder(dogPath, 1);
-
-    res.insert(res.end(), cats.begin(), cats.end());
-    res.insert(res.end(), dogs.begin(), dogs.end());
-
-    cout << "Loaded " << res.size() << " images (16x16): "
-         << cats.size() << " cats, " << dogs.size() << " dogs\n";
-
-    return res;
-}
-
-// === HÀM ĐỌC ẢNH 400x400 ===
-vector<NeuralInput> ReadImage400x400() {
-    vector<NeuralInput> res;
-
-    cout << "Loading 400x400 images...\n";
-
-    string catPath = "./Dataset/cat/400x400";
-    string dogPath = "./Dataset/dog/400x400";
-
-    vector<NeuralInput> cats = ReadImageFolder(catPath, 0);
-    vector<NeuralInput> dogs = ReadImageFolder(dogPath, 1);
-
-    res.insert(res.end(), cats.begin(), cats.end());
-    res.insert(res.end(), dogs.begin(), dogs.end());
-
-    cout << "Loaded " << res.size() << " images (400x400): "
-         << cats.size() << " cats, " << dogs.size() << " dogs\n";
-
-    return res;
-}
-
-// ============================================
-// MAIN
-// ============================================
 int main() {
     //     Matrix<Tracebackable<float>> a1 = Matrix<Tracebackable<float>>(3,16,16);
     // Matrix<Tracebackable<float>> b1 = Matrix<Tracebackable<float>>(3,16,16);
     // auto test  =a1 - b1;
 
-        // Matrix<float> ker = Matrix<float>(6,3,3);
-        // cout << *a.convolution(ker,2);
-        // Matrix a = Matrix<float>(1,16,16);
-        // auto test  =a.transpose();
-        //    cout << a <<  test;
+    // Matrix<float> ker = Matrix<float>(6,3,3);
+    // cout << *a.convolution(ker,2);
+    // Matrix a = Matrix<float>(1,16,16);
+    // auto test  =a.transpose();
+    //    cout << a <<  test;
     // cout << a;
     //     cout << "========================================\n";
     //     cout << "   Cat vs Dog CNN Classifier\n";
     //     cout << "========================================\n\n";
 
-        //
-        // // ============ LOAD IMAGES ============
 
-        bool useSmallImage = true;  // true = 16x16, false = 400x400
-        vector<NeuralInput> trainingData,testData;
-        //
-        if (useSmallImage) {
-            trainingData = ReadImage16x16(false);
-            testData = ReadImage16x16(true);
-        } else {
-         //   trainingData = ReadImage400x400();
-        }
+    //
+    // // ============ LOAD IMAGES ============
 
-        //
-        //
-        // cout << trainingData.size() << endl;
-        //
-        // // ============ BUILD CNN ============
-        // cout << "Building CNN architecture...\n";
-        //
+    bool useSmallImage = true;  // true = 16x16, false = 400x400
+    vector<NeuralInput> trainingData,testData;
+    //
+    if (useSmallImage) {
+        trainingData = ReadImage16x16(false);
+        testData = ReadImage16x16(true);
+    } else {
+      //  trainingData = ReadImage400x400();
+    }
+    //
+    //
+    // cout << trainingData.size() << endl;
+    //
+    // // ============ TEST ============
+
+        auto loadedNet = ModelSerialize::loadNetwork<NeuralInput>("../Models/mymodel.json");
+
         NeuralNetwork<NeuralInput> net;
         int n = 10;
         net.learningRate = 0.001f;
             globalLearningRate.store(net.learningRate);
         std::thread lrThread(monitorLearningRate);
 
-        int outputNeuron = 2;
+
         auto layer1 = ConvolutionLayer(3, 6, 3, 2);
         auto layer2 = MaxPoolingLayer(2, 2);
         auto fc1 = FClayer(6 * 4 * 4, EnumActivationType::ReLU,true);
@@ -198,24 +125,14 @@ int main() {
             predictID = ptr_maxVal_index - ptr_firstElm;
             cout << "Predict res: " << *ptr_predRes;
 
-            int t = TB.get(0,testImage.lable,predictID);
-            TB.set(0,testImage.lable,predictID,t+1);
-        }
-        cout << "truth table"<< TB;
-        int sum = 0;
-        for (int i = 0;i < outputNeuron;i++) {
-            sum += TB.get(0,i,i);
-        }
-        cout << "accuricy:" << sum / testData.size();
-        //
-        // // ============ TRAINING ============
+        cout << "Training completed, saving model\n";
+        ModelSerialize::saveNetwork(net, "../Models/mymodel.json");
 
+        // auto* reloadedNet = ModelSerialize::loadNetwork<float>("../Models/mymodel.json");
+        // std::cout << " Model loaded successfully\n";
 
-        auto* reloadedNet = ModelSerialize::loadNetwork<float>("../Models/mymodel.json");
-
-        std::cout << " Model loaded successfully\n";
-
-        delete reloadedNet;
+        // delete reloadedNet;
         return 0;
+
 
 }
