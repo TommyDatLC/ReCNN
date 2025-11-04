@@ -108,68 +108,68 @@ int main() {
     // Matrix<Tracebackable<float>> b1 = Matrix<Tracebackable<float>>(3,16,16);
     // auto test  =a1 - b1;
 
-        // Matrix<float> ker = Matrix<float>(6,3,3);
-        // cout << *a.convolution(ker,2);
-        // Matrix a = Matrix<float>(1,16,16);
-        // auto test  =a.transpose();
-        //    cout << a <<  test;
+    // Matrix<float> ker = Matrix<float>(6,3,3);
+    // cout << *a.convolution(ker,2);
+    // Matrix a = Matrix<float>(1,16,16);
+    // auto test  =a.transpose();
+    //    cout << a <<  test;
     // cout << a;
     //     cout << "========================================\n";
     //     cout << "   Cat vs Dog CNN Classifier\n";
     //     cout << "========================================\n\n";
-        NeuralNetwork<NeuralInput> net;
-        net.learningRate = 0.01f;
-        //
-        // // ============ LOAD IMAGES ============
 
-        bool useSmallImage = true;  // true = 16x16, false = 400x400
-        vector<NeuralInput> trainingData;
-        //
-        if (useSmallImage) {
-            trainingData = ReadImage16x16();
-        } else {
-            trainingData = ReadImage400x400();
+    NeuralNetwork<NeuralInput> net;
+    net.learningRate = 0.01f;
+    //
+    // // ============ LOAD IMAGES ============
+
+    bool useSmallImage = true;  // true = 16x16, false = 400x400
+    vector<NeuralInput> trainingData;
+    //
+    if (useSmallImage) {
+        trainingData = ReadImage16x16();
+    } else {
+        trainingData = ReadImage400x400();
+    }
+    //
+    //
+    // cout << trainingData.size() << endl;
+    //
+    // // ============ TEST ============
+
+    auto loadedNet = ModelSerialize::loadNetwork<NeuralInput>("../Models/mymodel.json");
+
+    for (auto l : loadedNet->layers) {
+        std::cout << "Layer type: " << typeid(*l).name() << std::endl;
+        if (auto fc = dynamic_cast<FClayer*>(l)) {
+            auto W = fc->getWeightMatrix();
+            auto B = fc->getBiasMatrix();
+            if (W && B) {
+                std::cout << "W dims: " << W->getDim().x << "," << W->getDim().y << "," << W->getDim().z << std::endl;
+                std::cout << "B dims: " << B->getDim().x << "," << B->getDim().y << "," << B->getDim().z << std::endl;
+            } else {
+                std::cout << "⚠️ Missing weights or biases in this FC layer\n";
+            }
         }
-        //
-        //
-        // cout << trainingData.size() << endl;
-        //
-        // // ============ TEST ============
-
-    //     auto loadedNet = ModelSerialize::loadNetwork<NeuralInput>("Models/mymodel.json");
-    //
-    //     for (auto l : net.layers) {
-    //     std::cout << "Layer type: " << typeid(*l).name() << std::endl;
-    //     if (auto fc = dynamic_cast<FClayer*>(l)) {
-    //         auto W = fc->getWeightMatrix();
-    //         auto B = fc->getBiasMatrix();
-    //         std::cout << "W dims: " << W->getDim().x << "," << W->getDim().y << "," << W->getDim().z << std::endl;
-    //         std::cout << "B dims: " << B->getDim().x << "," << B->getDim().y << "," << B->getDim().z << std::endl;
-    //         std::cout << "First 3 weights: " << W->getFlatten(0) << " "
-    //                   << W->getFlatten(1) << " "
-    //                   << W->getFlatten(2) << std::endl;
-    //         }
-    //     }
-    //
-    //     int idx = 0;
-    //     for (auto layer : loadedNet->layers) {
-    //     std::cout << "Layer #" << idx++ << ": ";
-    //
-    //     if (auto conv = dynamic_cast<ConvolutionLayer*>(layer)) {
-    //         std::cout << "Conv stride=" << conv->getStride();
-    //         auto km = conv->getKernelMatrix();
-    //         std::cout << ", kernel " << (km ? std::to_string(km->getLen()) : std::string("NULL")) << "\n";
-    //     } else if (auto pool = dynamic_cast<MaxPoolingLayer*>(layer)) {
-    //         std::cout << "Pool size=" << pool->getSize() << ", stride=" << pool->getStride() << "\n";
-    //     } else if (auto fc = dynamic_cast<FClayer*>(layer)) {
-    //         std::cout << "FC dense=" << fc->getDense()
-    //                   << ", weight=" << (fc->getWeightMatrix() ? std::to_string(fc->getWeightMatrix()->getLen()) : std::string("NULL"))
-    //                   << ", bias="  << (fc->getBiasMatrix() ? std::to_string(fc->getBiasMatrix()->getLen()) : std::string("NULL"))
-    //                   << "\n";
-    //     } else {
-    //         std::cout << "Unknown layer\n";
-    //     }
-    // }
+        // Path debugging
+        int idx = 0;
+        for (auto layer : loadedNet->layers) {
+            std::cout << "Layer #" << idx++ << ": ";
+            if (auto conv = dynamic_cast<ConvolutionLayer*>(layer)) {
+                std::cout << "Conv stride=" << conv->getStride();
+                auto km = conv->getKernelMatrix();
+                std::cout << ", kernel " << (km ? std::to_string(km->getLen()) : std::string("NULL")) << "\n";
+            } else if (auto pool = dynamic_cast<MaxPoolingLayer*>(layer)) {
+                std::cout << "Pool size=" << pool->getSize() << ", stride=" << pool->getStride() << "\n";
+            } else if (auto fc = dynamic_cast<FClayer*>(layer)) {
+                std::cout << "FC dense=" << fc->getDense()
+                          << ", weight=" << (fc->getWeightMatrix() ? std::to_string(fc->getWeightMatrix()->getLen()) : std::string("NULL"))
+                          << ", bias="  << (fc->getBiasMatrix() ? std::to_string(fc->getBiasMatrix()->getLen()) : std::string("NULL"))
+                          << "\n";
+            } else {
+                std::cout << "Unknown layer\n";
+            }
+        }
 
         // // ============ BUILD CNN ============
         cout << "Building CNN architecture...\n";
@@ -197,27 +197,27 @@ int main() {
         //
         // net.predict(&a);
 
-         for (int i = 0;i < n;i++) {
+        for (int i = 0;i < n;i++) {
 
             float totalLoss = 0;
-             for (int j = 0;j < trainingData.size();j++) {
+            for (int j = 0;j < trainingData.size();j++) {
                 // cout << "EPOCH " << i << " " << j << '\n';
-                 net.predict(&trainingData[i]);
-                 net.backward();
+                net.predict(&trainingData[i]);
+                net.backward();
 
-                 if (i % 10 == 0)
-                     totalLoss += net.getError();
-             }
-                 if (totalLoss != 0) {
-                     cout << "loss:" << totalLoss << '\n';
+                if (i % 10 == 0)
+                    totalLoss += net.getError();
+            }
+            if (totalLoss != 0) {
+                cout << "loss:" << totalLoss << '\n';
                 //  auto t = net.getPredictResult();
                 // std::cout << "Output Matrix" <<
                 //     *(Matrix<float>*)t ;
 
-             }
-             //0.666687 0.333313
-             //0.686901 0.313099
-         }
+            }
+            //0.666687 0.333313
+            //0.686901 0.313099
+        }
 
 
         cout << "Architecture: Input → Conv(3→6) → Pool → FC(96→32) → FC(32→16) → Output(2)\n\n";
@@ -229,9 +229,10 @@ int main() {
 
         ModelSerialize::saveNetwork(net, "../Models/mymodel.json");
 
-        auto* loadedNet = ModelSerialize::loadNetwork<float>("../Models/mymodel.json");
+        auto* reloadedNet = ModelSerialize::loadNetwork<float>("../Models/mymodel.json");
         std::cout << " Model loaded successfully\n";
 
-        delete loadedNet;
+        delete reloadedNet;
         return 0;
+    }
 }

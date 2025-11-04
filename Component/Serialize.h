@@ -41,21 +41,21 @@ public:
     template<typename T>
     static Matrix<T> loadMatrix(const json& j) {
         if (j.is_null()) throw std::runtime_error("loadMatrix: null json");
-        int size3D = j.at("size3D").get<int>();
-        int rows = j.at("rows").get<int>();
-        int cols = j.at("cols").get<int>();
+
+        int size3D = j.value("size3D", 1);
+        int rows   = j.value("rows", 1);
+        int cols   = j.value("cols", 1);
         std::vector<T> vec = j.at("data").get<std::vector<T>>();
-        int len = (int)vec.size();
 
-        // Construct a fresh Matrix that owns its own buffer
-        Matrix<T> m(size3D, rows, cols); // adjust ctor signature to your Matrix API
+        Matrix<T> m(size3D, rows, cols);
 
-        for (int i = 0; i < len; ++i) {
-            m.setFlatten(i, vec[i]); // <--- replace with the actual setter your Matrix uses
+        for (int i = 0; i < (int)vec.size(); ++i) {
+            m.setFlatten(i, vec[i]);
         }
 
         return m;
     }
+
 
 
     // --- helpers for activation enum ---
