@@ -54,15 +54,25 @@ namespace TommyDat {
 
         void init() {
             if (_isFirst) {
+                // Input layer — may not have weights, but still allocate bias for consistency
+                WeightMatrix = nullptr;
+                BiasMatrix = new Matrix<float>(1, 1, _dense, 0.0f);
                 return;
             }
-            FClayer* lastFcLayer =  dynamic_cast<FClayer*>(lastLayer );
-            WeightMatrix =  new Matrix<float>(1,_dense,lastFcLayer->getDense());
-            BiasMatrix = new  Matrix<float>(1, 1, _dense);
 
-         //   std::cout << *BiasMatrix << std::endl;
+            // Get previous layer’s dense size
+            FClayer* lastFcLayer = dynamic_cast<FClayer*>(lastLayer);
+            int prevDense = lastFcLayer ? lastFcLayer->getDense() : 0;
 
+            // Allocate properly shaped matrices
+            WeightMatrix = new Matrix<float>(1, _dense, prevDense);
+            BiasMatrix   = new Matrix<float>(1, 1, _dense);
+
+            // He initialize weights
+            WeightMatrix->heInit(prevDense);
+            BiasMatrix->InitMatrixWithVal(1, 1, _dense, 0.0f);
         }
+
         // Destructor
         // ~FClayer() {
         //     delete WeightMatrix;

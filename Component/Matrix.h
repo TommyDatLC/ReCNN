@@ -305,7 +305,7 @@ namespace TommyDat{
 
 
 
-        private:
+        public:
             T* matrixFlatten = nullptr;
             int n=0,m=0,size3D=0;
             int lenFlattenCache = 0;
