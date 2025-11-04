@@ -1,7 +1,7 @@
 {
 	"InstallScripts" : 
 	[
-		"/home/tommydatlc/Documents/Code/CUDA/ReCNN/cmake-build-debug/cmake_install.cmake"
+		"/home/datdau/Documents/BTVN/ReCNN/cmake-build-debug/cmake_install.cmake"
 	],
 	"Parallel" : false
 }

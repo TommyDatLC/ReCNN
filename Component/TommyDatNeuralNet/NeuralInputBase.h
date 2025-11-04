@@ -13,7 +13,7 @@ namespace TommyDat {
         Tdata* data;
         int lable = 5;
         virtual float getError(void* predictResult) = 0;
-        virtual Matrix<float>* getGradientMatrix(void* lastLayerActivation) = 0;
+        virtual Matrix<float> getGradientMatrix(void* lastLayerActivation) = 0;
     };
 }
 

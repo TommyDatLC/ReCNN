@@ -5,7 +5,7 @@ set(CMAKE_CUDA_STANDARD 20)
 
 add_executable(ReCNN
         Utils/Utility.cuh
-        main.cu
+        main16.cu
         Utils/GPUmax.h
         Utils/GPUPrefixSum.h
         Utils/GPUMatrixOp.h
@@ -19,11 +19,12 @@ add_executable(ReCNN
         Component/TommyDatNeuralNet/NeuralInputBase.h
         Component/TommyDatNeuralNet/NeuralInput.h
         Component/Layers/MaxPoolingLayer.h
-        Component/NNlayer.h
+        Component/Layers/FClayer.h
         Component/Tracebackable.h
         Component/ConvolutionLayerBackward.h
         Component/TommyDatNeuralNet/NeuralInput.h
         Utils/stbImage.h
+        Component/Serialize.h
 
 )
 
@@ -32,4 +33,4 @@ set_target_properties(ReCNN PROPERTIES
         CUDA_SEPARABLE_COMPILATION ON)
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --extended-lambda")
 
-file(COPY testdata1.png DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY Dataset DESTINATION ${CMAKE_CURRENT_BINARY_DIR})

@@ -136,29 +136,29 @@ ReCNN/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/ReCNN.dir/build.make CMakeFiles/ReCNN.dir/build
 .PHONY : ReCNN/fast
 
-main.o: main.cu.o
-.PHONY : main.o
+main16.o: main16.cu.o
+.PHONY : main16.o
 
 # target to build an object file
-main.cu.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ReCNN.dir/build.make CMakeFiles/ReCNN.dir/main.cu.o
-.PHONY : main.cu.o
+main16.cu.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ReCNN.dir/build.make CMakeFiles/ReCNN.dir/main16.cu.o
+.PHONY : main16.cu.o
 
-main.i: main.cu.i
-.PHONY : main.i
+main16.i: main16.cu.i
+.PHONY : main16.i
 
 # target to preprocess a source file
-main.cu.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ReCNN.dir/build.make CMakeFiles/ReCNN.dir/main.cu.i
-.PHONY : main.cu.i
+main16.cu.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ReCNN.dir/build.make CMakeFiles/ReCNN.dir/main16.cu.i
+.PHONY : main16.cu.i
 
-main.s: main.cu.s
-.PHONY : main.s
+main16.s: main16.cu.s
+.PHONY : main16.s
 
 # target to generate assembly for a file
-main.cu.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ReCNN.dir/build.make CMakeFiles/ReCNN.dir/main.cu.s
-.PHONY : main.cu.s
+main16.cu.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ReCNN.dir/build.make CMakeFiles/ReCNN.dir/main16.cu.s
+.PHONY : main16.cu.s
 
 # Help Target
 help:
@@ -170,9 +170,9 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... ReCNN"
-	@echo "... main.o"
-	@echo "... main.i"
-	@echo "... main.s"
+	@echo "... main16.o"
+	@echo "... main16.i"
+	@echo "... main16.s"
 .PHONY : help
 
 

@@ -16,11 +16,32 @@ namespace TommyDat {
             this->stride = stride;
             this->size = size;
         }
+
+        int getStride() const { return
+            stride;
+
+        }
+        void setStride(int s) {
+            stride = s;
+
+        }
+        int getSize() const { return
+            size;
+
+        }
+        void setSize(int s) {
+            size = s;
+        }
+        // Constructor for deserialization
+       MaxPoolingLayer() : stride(1), size(2) {}
+
         void inference(void *ptr_lastLayerInput) override {
            Matrix<Tracebackable<float>>* inputMatrix = static_cast<Matrix<Tracebackable<float>>*>(ptr_lastLayerInput);
-           // std::cout << "input matrix \n" << *inputMatrix;
-            auto outputMatrix = inputMatrix->maxPooling(size,stride);
-          //  std::cout << "output matrix \n" << *outputMatrix;
+         //   std::cout << "INPUT MAX POOL \n" << *inputMatrix;
+            // setInActivation(inputMatrix);
+            auto maxPoolInp = inputMatrix->maxPooling(size,stride);
+            Matrix<Tracebackable<float>>* outputMatrix = new Matrix(maxPoolInp);
+           //std::cout << "OUTPUT MAX POOL \n" << *outputMatrix;
             setOutActivation(outputMatrix);
             if (nextLayer != nullptr)
                 nextLayer->inference(outputMatrix);
@@ -28,11 +49,14 @@ namespace TommyDat {
         // reShape the layer
         void backward(void *ptr_nextLayerInput,float learningRate) override {
             Matrix<float>* ptr_nextLayerWeight = static_cast<Matrix<float>*>(ptr_nextLayerInput);
-            dim3 thisActivationDim = getOutActivation()->getDim();
+            void* ptrvoid_OutAct = getOutActivation();
+            auto ptr_outAct = static_cast<Matrix<Tracebackable<float>>*>(ptrvoid_OutAct);
+            dim3 thisActivationDim = ptr_nextLayerWeight->getDim();
             ptr_nextLayerWeight->reShape(thisActivationDim.x,thisActivationDim.y,thisActivationDim.z);
 
+
             if (lastLayer != nullptr) {
-                ConvBackwardData backward_data = ConvBackwardData { getOutActivation(),ptr_nextLayerWeight };
+                ConvBackwardData backward_data = ConvBackwardData { ptr_outAct,ptr_nextLayerWeight };
                 lastLayer->backward(&backward_data,learningRate);
             }
         }

@@ -14,26 +14,27 @@ namespace TommyDat {
     struct Layer {
     private:
 
-        Matrix<Tracebackable<float>>* inActivation = nullptr;
-        Matrix<Tracebackable<float>>* outActivation = nullptr;
+        void* inActivation = nullptr;
+        void* outActivation = nullptr;
 
     public:
-        void setOutActivation(Matrix<Tracebackable<float>>* newAc) {
+        void setOutActivation(void* newAc) {
             if (newAc == outActivation)
                 return;
             delete outActivation;
             outActivation = newAc;
         }
-        Matrix<Tracebackable<float>>* getOutActivation() {
+
+        void* getOutActivation() {
             return outActivation;
         }
-        void setInActivation(Matrix<Tracebackable<float>>* newAc) {
+        void setInActivation(void* newAc) {
             if (newAc == inActivation)
                 return;
             delete inActivation;
             inActivation = newAc;
         }
-        Matrix<Tracebackable<float>>* getInActivation() {
+        void* getInActivation() {
             return inActivation;
         }
         void setLastLayer(Layer* newLastLayer) {

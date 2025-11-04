@@ -20,6 +20,9 @@ namespace TommyDat{
         class Matrix
         {
             public:
+            Matrix() {
+
+            }
             // copy constructor (sửa memcpy)
             Matrix(Matrix& B) {
                 SetDim(B.size3D,B.n,B.m);
@@ -136,14 +139,14 @@ namespace TommyDat{
             int getLen() {
                 return lenFlattenCache;
             }
-            Matrix* softMax() {
+            Matrix softMax() {
                 T* rawResult = new T[lenFlattenCache];
                 memcpy(rawResult,matrixFlatten,sizeof(T) * lenFlattenCache);
                 T maxElm = CallGPUmax(rawResult,lenFlattenCache);
                 CallGPUExpMinusMax(rawResult,lenFlattenCache,maxElm);
                 T sum = CallGPUSum(rawResult,lenFlattenCache);
                 CallGPUSoftmax(rawResult,lenFlattenCache,sum);
-                return new Matrix(rawResult,size3D,n,m);
+                return Matrix(rawResult,size3D,n,m);
             }
             template <typename Tker>
             Matrix* convolution(Matrix<Tker>& kernel,int stride = 1) {
@@ -155,33 +158,33 @@ namespace TommyDat{
                 auto result =  CallGPUConvolution(matrixFlatten,size3D,n,m,kernelFlatten,dimKer.x,dimKer.y,dimKer.z,stride);
                 return new Matrix(result.newRawMatrix,result.Size3D,result.N,result.M);
             }
-            Matrix* maxPooling(int size,int stride) {
+            Matrix maxPooling(int size,int stride) {
                 auto result =  CallGPUmaxPooling(matrixFlatten,size3D,n,m,size,stride);
-                return new Matrix(result.newRawMatrix,result.Size3D,result.N,result.M);
+                return Matrix(result.newRawMatrix,result.Size3D,result.N,result.M);
             }
             template <typename T2,typename TOut = T>
-            Matrix<TOut>* operator*(const Matrix<T2>& B) {
+            Matrix<TOut> operator*(const Matrix<T2>& B) {
                 T* rawResult;
                 if (m != B.n)
                     throw std::runtime_error("* Dimension error, first matrix col not equal to second matrix row");
                 if (size3D != 1)
                     throw std::runtime_error(" We haven't support 3D matrix mul yet");
                 rawResult = CallMatrixMul(matrixFlatten,B.matrixFlatten,n,m,B.m);
-                return new Matrix<TOut>(rawResult,n,B.m);
+                return  Matrix<TOut>(rawResult,size3D,n,B.m);
             }
             template <typename T2>
-            Matrix* operator+(Matrix<T2>& B) {
+            Matrix operator+(Matrix<T2>& B) {
                 T* rawResult;
                 checkValidBasicOp(B);
-                rawResult = CallGPUmatrixBasicOP(matrixFlatten,B.flatten(),lenFlattenCache,true);
-                return new Matrix<T>(rawResult,size3D,n,m);
+                rawResult = CallGPUmatrixBasicOP(matrixFlatten,B.flatten(),lenFlattenCache,MAT_OP_ADD);
+                return  Matrix<T>(rawResult,size3D,n,m);
             }
             template <typename T2>
-            Matrix<T>* operator-(Matrix<T2>& B) {
+            Matrix<T> operator-(Matrix<T2>& B) {
                 T* rawResult;
                 checkValidBasicOp<T2>(B);
-                rawResult = CallGPUmatrixBasicOP(matrixFlatten,B.flatten(),lenFlattenCache,false);
-                return new Matrix<T>(rawResult,size3D,n,m);
+                rawResult = CallGPUmatrixBasicOP(matrixFlatten,B.flatten(),lenFlattenCache,MAT_OP_SUBTRACT);
+                return  Matrix<T>(rawResult,size3D,n,m);
             }
             // the same with toString() function in java
             friend std::ostream& operator<<(std::ostream& os, Matrix& a) {
@@ -209,7 +212,7 @@ namespace TommyDat{
             void heInit(int LayerSize,ull seed = 0) {
                 CallGPUheInit(matrixFlatten,lenFlattenCache,LayerSize,seed);
             }
-            void heInit(ull seed = 0) {
+            void heInit(ull seed = 12) {
                 CallGPUheInit(matrixFlatten,lenFlattenCache,lenFlattenCache,seed);
             }
 
@@ -228,9 +231,17 @@ namespace TommyDat{
                         return 0.f;
                 });
             }
-            Matrix* transpose() {
+            void TransposeVector() {
+                std::swap(n,m);
+            }
+            Matrix transpose() {
+                // if (n == 1 || m == 1) {
+                //     Matrix res = Matrix(*this);
+                //     res.TransposeVector();
+                //     return res;
+                // }
                T* raw =  CallGPUTranspose(matrixFlatten,size3D,n,m);
-                return new Matrix(raw,size3D,m,n);
+                return  Matrix(raw,size3D,m,n);
             }
             void reShape(int newSize3D,int newM,int newN) {
                 if (newSize3D * newN * newM != lenFlattenCache)
@@ -340,6 +351,50 @@ namespace TommyDat{
             throw std::runtime_error("Dimension error, cannot mul when the two matrix shape is not match");
         auto ptr_res = CallGPUmatrixBasicOP(a.flatten(),b.flatten(),aLen,MAT_OP_MUL);
         return new Matrix<T1>(ptr_res,aDim.x,aDim.y,aDim.z);
+    }
+    template <typename T>
+    Matrix<T>* SumAlongAxis(Matrix<T>& mat,int axis){
+        dim3 dim = mat.getDim();
+        int size3D = dim.x, n= dim.y, m = dim.z;
+        if (axis < 0 || axis > 2) {
+            throw std::runtime_error("Axis mmust be 0,1 or 2");
+        }
+         // sum along size3D ( dimensions or deeps)
+        if (axis == 0) {
+            Matrix<T>* result = new Matrix<T>(1,n,m,0);
+            for (int s = 0; s < size3D ;s++) {
+                for (int i = 0; i < n; i++) {
+                    for (int j = 0; j < m; j++) {
+                        result->set(0,i,j, result->get(0,i,j)+mat.get(axis,s,i));
+                    }
+                }
+            }
+            return result;
+
+        }
+        // sum along rows
+        else if (axis == 1) {
+            Matrix<T>* result = new Matrix<T>(size3D, 1, m, 0);
+            for (int s = 0; s < size3D; s++) {
+                for (int i = 0; i < n; i++) {
+                    for (int j = 0; j < m; j++) {
+                        result->set(s, 0, j, result->get(s, 0,j) + mat.get(s, i ,j));
+                    }
+                }
+            }
+            return result;
+        }// sum along colums
+        else {
+            Matrix<T>* result = new Matrix<T>(size3D, n, 1,0 );
+            for (int s = 0; s < size3D; s++) {
+                for (int i = 0; i < n; i++) {
+                    for (int j =0; j < m; j++) {
+                        result->set(s,i,0, result->get(s,i,0) + mat.get(s,i,j));
+                    }
+                }
+            }
+            return result;
+        }
     }
 }
 
