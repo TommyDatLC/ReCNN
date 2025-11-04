@@ -128,15 +128,15 @@ namespace TommyDat{
                 checkValidID(x,y);
                 return matrixFlatten[id3d * m * n + x * m + y];
             }
-            T getFlatten(uint id) {
+            T getFlatten(uint id) const{
                 if (id >= lenFlattenCache)
                     throw std::runtime_error("Out of bound");
                 return matrixFlatten[id];
             }
-            dim3 getDim() {
+            dim3 getDim() const{
                 return dim3(size3D,n,m);
             }
-            int getLen() {
+            int getLen() const{
                 return lenFlattenCache;
             }
             Matrix softMax() {

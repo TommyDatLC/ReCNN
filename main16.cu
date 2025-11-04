@@ -8,7 +8,7 @@
 #include "Component/Layers/FClayer.h"
 #include "Component/Layers/MaxPoolingLayer.h"
 #include "Component/TommyDatNeuralNet/NeuralInput.h"
-
+#include "Component/Serialize.h"
 
 #include "Component/TommyDatNeuralNet/NeuralNetwork.h"
 
@@ -151,7 +151,7 @@ int main() {
         output.init();
         // Matrix loss(1,1,2,0.f);
         // loss.set(0,0,1,-1);
-        int n = 1000;
+        int n = 50;
 
         // NeuralInput a;
         // a.lable = 1;
@@ -186,5 +186,13 @@ int main() {
         //
         // // ============ TRAINING ============
 
+        // // ============ SAVE MODEL ==========
+
+        std::filesystem::create_directories("ReCNN/Models");
+
+        // save the network to JSON
+        ModelSerialize::saveNetwork(net, "ReCNN/Models/mymodel.json");
+
+        std::cout << "Model saved to ReCNN/Models/mymodel.json\n";
 
 }
