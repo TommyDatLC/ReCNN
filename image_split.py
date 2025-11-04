@@ -4,15 +4,15 @@ import random
 import shutil
 
 def split_and_label():
-    dataset_dir = "Dataset"  # folder name
+    dataset_dir = "Dataset"  # kiểm tra đúng tên thư mục
     output_dir = "dataset_split"
-    split_ratio = [0.7, 0.15, 0.15]
+    split_ratio = 0.7  # 70% train, 30% test
 
     classes = {"cat": 0, "dog": 1}
 
+    # Tạo file CSV
     csv_files = {
         "train": open("train_labels.csv", "w", newline=""),
-        "val": open("val_labels.csv", "w", newline=""),
         "test": open("test_labels.csv", "w", newline=""),
     }
     writers = {k: csv.writer(v) for k, v in csv_files.items()}
@@ -22,7 +22,7 @@ def split_and_label():
     for cls, label in classes.items():
         class_dir = os.path.join(dataset_dir, cls)
         if not os.path.isdir(class_dir):
-            print(f" ERROR!!! Folder not found: {class_dir}")
+            print(f"Folder not found: {class_dir}")
             continue
 
         print(f"\n Processing {cls} ...")
@@ -33,16 +33,14 @@ def split_and_label():
 
             images = [f for f in os.listdir(subpath)
                       if f.lower().endswith((".jpg", ".jpeg", ".png"))]
-
             random.shuffle(images)
+
             n_total = len(images)
-            n_train = int(n_total * split_ratio[0])
-            n_val = int(n_total * split_ratio[1])
+            n_train = int(n_total * split_ratio)
 
             splits = {
                 "train": images[:n_train],
-                "val": images[n_train:n_train + n_val],
-                "test": images[n_train + n_val:]
+                "test": images[n_train:]
             }
 
             for split_name, split_images in splits.items():
@@ -58,7 +56,7 @@ def split_and_label():
     for f in csv_files.values():
         f.close()
 
-    print("\n Dataset split & labeled successfully!")
+    print("\n Dataset split into train & test successfully!")
 
 if __name__ == "__main__":
     split_and_label()
