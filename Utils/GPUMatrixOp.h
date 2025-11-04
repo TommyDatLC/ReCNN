@@ -48,7 +48,7 @@ __global__ void matrixMulTile(const T* __restrict__ A,
                               const T* __restrict__ B,
                               T* __restrict__ C,
                               int N, int K, int M) {
-    constexpr int TILE = 16; // hoặc 16 để tăng occupancy
+    constexpr int TILE = 16; // the complier will set this for you,not runtime
     __shared__ T tileA[TILE][TILE];
     __shared__ T tileB[TILE][TILE];
 
@@ -111,7 +111,6 @@ T* CallMatrixMul(T* A, T* B, int HangA, int CotA, int CotB) {
         return nullptr;
     }
 
-    // allocate+copy device A,B (giả sử MallocAndCopyToDevice kiểm tra lỗi)
     d_a = MallocAndCopyToDevice(A, (size_t)HangA * (size_t)CotA);
     if (!d_a) { delete[] h_outp; return nullptr; }
 
@@ -412,11 +411,7 @@ void CallGPUapply(T* __restrict__ A,int n,TdeviceFunc f) {
     cudaMemcpy(A,d_a,sizeof(T) * n,cudaMemcpyDeviceToHost);
     cudaFree(d_a);
 }
-// Kernel: out-of-place transpose for each slice s.
-// Input layout (flatten): A[ s * (n*m) + x * m + y ]  where x in [0..n-1], y in [0..m-1]
-// Output layout (flatten): B[ s * (m*n) + y * n + x ]  -> shape (size3D, m, n)
 
-// Kernel (sửa mapping row/col)
 template <typename T>
 __global__ void GPUTranspose3D(T* __restrict__ A, T* __restrict__ B,
                                int size3D, int n, int m) {

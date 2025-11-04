@@ -26,6 +26,7 @@ namespace TommyDat {
             Matrix<float> result =  labelMatrix + *predictResultMatrix;
 
             return result;
+
         }
         float getError(void *predictResult) override {
            Matrix<float>* predictResultMatrix = static_cast<Matrix<float>*>(predictResult);

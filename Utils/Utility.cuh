@@ -95,6 +95,30 @@ struct RawMatrixOutput {
     int Size3D, N, M;
 };
 
+#include <thread>
+#include <atomic>
+#include <iostream>
+
+std::atomic<float> globalLearningRate;
+
+// Thread function to listen for new learning rate
+void monitorLearningRate() {
+    while (true) {
+        float newRate;
+        std::cout << "\nEnter new learning rate (or -1 to stop): ";
+        if (!(std::cin >> newRate)) {
+            std::cin.clear();
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            continue;
+        }
+        if (newRate < 0) {
+            std::cout << "Stopping learning rate monitor...\n";
+            break;
+        }
+        globalLearningRate.store(newRate);
+        std::cout << "[INFO] Learning rate updated to " << newRate << "\n";
+    }
+}
 
 // trả về số channel
 #endif //RECNN_UTILITY_CUH

@@ -133,7 +133,7 @@ namespace TommyDat {
         outputCache = activated; // chuyển ownership
 
         // setOutActivation nên nhận pointer tới output sau activation
-        setOutActivation(outputCache);
+        setOutActivation<Matrix<float>>(outputCache);
 
         // Forward to next layer
         if (nextLayer != nullptr) {
@@ -272,6 +272,7 @@ namespace TommyDat {
             if (WeightMatrix == NULL)
                 std::cout << "weight matrix is null " << i << '\n';
         }
+
     };
 }
 

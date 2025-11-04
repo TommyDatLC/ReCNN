@@ -18,20 +18,26 @@ namespace TommyDat {
         void* outActivation = nullptr;
 
     public:
+        template <typename T>
         void setOutActivation(void* newAc) {
-            if (newAc == outActivation)
+
+            if (newAc == outActivation) {
                 return;
-            delete outActivation;
+            }
+            delete static_cast<T*>(outActivation);
             outActivation = newAc;
+
         }
 
         void* getOutActivation() {
             return outActivation;
         }
+        template <typename T>
         void setInActivation(void* newAc) {
-            if (newAc == inActivation)
+            if (newAc == inActivation) {
                 return;
-            delete inActivation;
+            }
+            delete static_cast<T*>(inActivation);
             inActivation = newAc;
         }
         void* getInActivation() {

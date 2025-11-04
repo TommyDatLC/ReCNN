@@ -42,9 +42,10 @@ namespace TommyDat {
             auto maxPoolInp = inputMatrix->maxPooling(size,stride);
             Matrix<Tracebackable<float>>* outputMatrix = new Matrix(maxPoolInp);
            //std::cout << "OUTPUT MAX POOL \n" << *outputMatrix;
-            setOutActivation(outputMatrix);
+            setOutActivation<Matrix<Tracebackable<float>>>(outputMatrix);
             if (nextLayer != nullptr)
                 nextLayer->inference(outputMatrix);
+
         }
         // reShape the layer
         void backward(void *ptr_nextLayerInput,float learningRate) override {
@@ -60,6 +61,7 @@ namespace TommyDat {
                 lastLayer->backward(&backward_data,learningRate);
             }
         }
+
     };
 }
 #endif //RECNN_MAXPOOLINGLAYER_H
