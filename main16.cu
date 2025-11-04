@@ -280,27 +280,19 @@ int main() {
         // a.data = new Matrix<Tracebackable<float>>(1,1,10);
         //
         // net.predict(&a);
-
-    for (int i = 0;i < n;i++) {
-
+int epochs = 10;
+    for (int epoch = 0; epoch < epochs; epoch++) {
         float totalLoss = 0;
-        for (int j = 0;j < trainingData.size();j++) {
-            // cout << "EPOCH " << i << " " << j << '\n';
-            net.predict(&trainingData[i]);
+        for (int j = 0; j < trainingData.size(); j++) {
+            net.predict(&trainingData[j]);
             net.backward();
-
-            if (i % 10 == 0)
-                totalLoss += net.getError();
+            totalLoss += net.getError();
         }
-        if (totalLoss != 0) {
-            cout << "loss:" << totalLoss << '\n';
-            //  auto t = net.getPredictResult();
-            // std::cout << "Output Matrix" <<
-            //     *(Matrix<float>*)t ;
+        cout << "[Epoch " << epoch + 1 << "] Loss = " << totalLoss << endl;
 
-        }
-        //0.666687 0.333313
-        //0.686901 0.313099
+        // 🔹 Đánh giá sau mỗi epoch:
+        float acc = elvaluate(net, testData);
+        cout << "Validation Accuracy = " << acc * 100 << "%\n";
     }
     float acc = elvaluate(net, testData);
     cout << "Test Accuracy = " << acc * 100 << "%\n";
