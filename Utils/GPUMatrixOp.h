@@ -76,8 +76,8 @@ __global__ void matrixMulTile(const T* __restrict__ A,
         } else {
             tileB[ty][tx] = static_cast<T>(0);
         }
-
         __syncthreads();
+
 
         // multiply accumulate
 #pragma unroll

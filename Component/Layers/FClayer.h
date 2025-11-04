@@ -23,6 +23,37 @@ namespace TommyDat {
         bool _isFirst;
         int _dense;
     public:
+        // Default constructor for deserialization (keeps behavior compatible)
+        FClayer() : WeightMatrix(nullptr), BiasMatrix(nullptr), inputCache(nullptr),
+                    outputCache(nullptr), activationType(EnumActivationType::ReLU),
+                    _isFirst(false), _dense(0) {}
+
+        // Getter for weight & bias (const and non-const)
+        Matrix<float>* getWeightMatrix() {
+            return WeightMatrix;
+        }
+        const Matrix<float>* getWeightMatrix() const {
+            return WeightMatrix;
+        }
+
+        Matrix<float>* getBiasMatrix() {
+            return BiasMatrix;
+        }
+        const Matrix<float>* getBiasMatrix() const {
+            return BiasMatrix;
+        }
+
+        // Setter that makes a deep copy
+        void setWeightMatrix(Matrix<float>& m) {
+            if (WeightMatrix) delete WeightMatrix;
+            WeightMatrix = new Matrix<float>(m);
+        }
+
+        void setBiasMatrix(Matrix<float>& m) {
+            if (BiasMatrix) delete BiasMatrix;
+            BiasMatrix = new Matrix<float>(m);
+        }
+
         // Constructor
         int getDense() { return _dense; }
         FClayer(int dense, EnumActivationType actType = EnumActivationType::ReLU,bool first = false)
