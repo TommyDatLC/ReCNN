@@ -131,11 +131,11 @@ namespace TommyDat{
                 matrixFlatten[id] = val;
             }
 
-            T get(uint id3d,uint x,uint y) {
+            T get(uint id3d,uint x,uint y) const{
                 checkValidID(x,y);
                 return matrixFlatten[id3d * m * n + x * m + y];
             }
-            T getFlatten(uint id) {
+            T getFlatten(uint id) const{
                 if (id >= lenFlattenCache)
                     throw std::runtime_error("Out of bound");
                 return matrixFlatten[id];
@@ -309,7 +309,7 @@ namespace TommyDat{
             T* matrixFlatten = nullptr;
             int n=0,m=0,size3D=0;
             int lenFlattenCache = 0;
-            void checkValidID(uint x,uint y) {
+            void checkValidID(uint x,uint y) const{
                 if (x >= n || y >= m)
                     throw std::runtime_error("out of bound");
             }

@@ -24,7 +24,7 @@ namespace TommyDat {
         int _dense;
     public:
         // Constructor
-        int getDense() { return _dense; }
+        int getDense() const{ return _dense; }
         FClayer(int dense, EnumActivationType actType = EnumActivationType::ReLU,bool first = false)
         {
             _dense = dense;
@@ -32,6 +32,8 @@ namespace TommyDat {
             _isFirst = first;
             activationType = actType;
           //  std::cout << "FClayer initialized: " << inputSize << " -> " << outputSize << std::endl;
+            WeightMatrix = nullptr;
+            BiasMatrix = nullptr;
         }
 
         Matrix<float>* getWeightMatrix() const { return WeightMatrix; }
@@ -74,6 +76,9 @@ namespace TommyDat {
         void inference(void* ptr_lastLayerInput) override {
 
     if (_isFirst) {
+        if (!ptr_lastLayerInput)
+            throw std::runtime_error("First layer input is null");
+
         auto tracebackableMaxpooling = static_cast<Matrix<Tracebackable<float>>*>(ptr_lastLayerInput);
         auto floatMaxPoolingOutput = toValueMatrix(*tracebackableMaxpooling);
         if (floatMaxPoolingOutput.getLen() != _dense) {

@@ -8,6 +8,7 @@
 #include "Component/Layers/FClayer.h"
 #include "Component/Layers/MaxPoolingLayer.h"
 #include "Component/TommyDatNeuralNet/NeuralInput.h"
+#include "Component/Serialize.h"
 
 
 #include "Component/TommyDatNeuralNet/NeuralNetwork.h"
@@ -133,9 +134,46 @@ int main() {
         //
         // cout << trainingData.size() << endl;
         //
+        // // ============ TEST ============
+
+    //     auto loadedNet = ModelSerialize::loadNetwork<NeuralInput>("Models/mymodel.json");
+    //
+    //     for (auto l : net.layers) {
+    //     std::cout << "Layer type: " << typeid(*l).name() << std::endl;
+    //     if (auto fc = dynamic_cast<FClayer*>(l)) {
+    //         auto W = fc->getWeightMatrix();
+    //         auto B = fc->getBiasMatrix();
+    //         std::cout << "W dims: " << W->getDim().x << "," << W->getDim().y << "," << W->getDim().z << std::endl;
+    //         std::cout << "B dims: " << B->getDim().x << "," << B->getDim().y << "," << B->getDim().z << std::endl;
+    //         std::cout << "First 3 weights: " << W->getFlatten(0) << " "
+    //                   << W->getFlatten(1) << " "
+    //                   << W->getFlatten(2) << std::endl;
+    //         }
+    //     }
+    //
+    //     int idx = 0;
+    //     for (auto layer : loadedNet->layers) {
+    //     std::cout << "Layer #" << idx++ << ": ";
+    //
+    //     if (auto conv = dynamic_cast<ConvolutionLayer*>(layer)) {
+    //         std::cout << "Conv stride=" << conv->getStride();
+    //         auto km = conv->getKernelMatrix();
+    //         std::cout << ", kernel " << (km ? std::to_string(km->getLen()) : std::string("NULL")) << "\n";
+    //     } else if (auto pool = dynamic_cast<MaxPoolingLayer*>(layer)) {
+    //         std::cout << "Pool size=" << pool->getSize() << ", stride=" << pool->getStride() << "\n";
+    //     } else if (auto fc = dynamic_cast<FClayer*>(layer)) {
+    //         std::cout << "FC dense=" << fc->getDense()
+    //                   << ", weight=" << (fc->getWeightMatrix() ? std::to_string(fc->getWeightMatrix()->getLen()) : std::string("NULL"))
+    //                   << ", bias="  << (fc->getBiasMatrix() ? std::to_string(fc->getBiasMatrix()->getLen()) : std::string("NULL"))
+    //                   << "\n";
+    //     } else {
+    //         std::cout << "Unknown layer\n";
+    //     }
+    // }
+
         // // ============ BUILD CNN ============
-        // cout << "Building CNN architecture...\n";
-        //
+        cout << "Building CNN architecture...\n";
+
         auto layer1 = ConvolutionLayer(3, 6, 3, 2);
         auto layer2 = MaxPoolingLayer(2, 2);
         auto fc1 = FClayer(6 * 4 * 4, EnumActivationType::ReLU,true);
@@ -151,7 +189,7 @@ int main() {
         output.init();
         // Matrix loss(1,1,2,0.f);
         // loss.set(0,0,1,-1);
-        int n = 1000;
+        int n = 50;
 
         // NeuralInput a;
         // a.lable = 1;
@@ -186,5 +224,14 @@ int main() {
         //
         // // ============ TRAINING ============
 
+        // // ============ SAVE THE MODEL AND PREPARE FOR THE NEXT CALL ===========
+        cout << "Training completed, saving model\n";
 
+        ModelSerialize::saveNetwork(net, "../Models/mymodel.json");
+
+        auto* loadedNet = ModelSerialize::loadNetwork<float>("../Models/mymodel.json");
+        std::cout << " Model loaded successfully\n";
+
+        delete loadedNet;
+        return 0;
 }

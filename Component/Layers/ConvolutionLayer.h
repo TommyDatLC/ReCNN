@@ -45,13 +45,26 @@ namespace TommyDat {
             stride = s;
         }
 
-        Matrix<float>& getWeightMatrix() const {
-            return *kernelList;
+        Matrix<float>* getKernelMatrix() const {
+            return kernelList;
         }
 
-        void setWeightMatrix(const Matrix<float>& mat) {
-            delete kernelList;
-            *kernelList = mat;
+        void setKernelMatrix(const Matrix<float>& mat) {
+            if (kernelList != nullptr) {
+                delete kernelList;
+            }
+            kernelList = new Matrix<float>(mat); // allocate fresh copy
+        }
+
+        // GETTER SETTER for serializing
+        int getInChannel() const {
+            return inChannel;
+        }
+        int getOutChannel() const {
+            return outChannel;
+        }
+        int getKernelSize() const {
+            return kernelSize;
         }
 
         void inference(void* ptr_lastLayerInput) override {
