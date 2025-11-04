@@ -138,7 +138,7 @@ vector<NeuralInput> ReadTest2() {
 
     return res;
 }
-// === HÀM ĐỌC ẢNH 16x16 cua Test ===
+// === HÀM ĐỌC ẢNH 16x16 cua Train ===
 vector<NeuralInput> ReadTrain1(){
     vector<NeuralInput> res;
 
