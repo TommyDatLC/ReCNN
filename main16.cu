@@ -189,7 +189,7 @@ int main() {
         output.init();
         // Matrix loss(1,1,2,0.f);
         // loss.set(0,0,1,-1);
-        int n = 50;
+        int n = 1000;
 
         // NeuralInput a;
         // a.lable = 1;
@@ -204,6 +204,9 @@ int main() {
                 // cout << "EPOCH " << i << " " << j << '\n';
                 net.predict(&trainingData[i]);
                 net.backward();
+                // if using i, the program still runs but will eventually hit 139 (segmentation fault when input a high n since it will run out of mem)
+                // while using j, the program will face the 134 error which is the memory corruption since there are no input for height/width, which causing mismatch between layers
+
 
                 if (i % 10 == 0)
                     totalLoss += net.getError();

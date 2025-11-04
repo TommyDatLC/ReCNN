@@ -25,7 +25,7 @@ namespace TommyDat {
             outActivation = newAc;
         }
 
-        void* getOutActivation() {
+        void* getOutActivation() const{
             return outActivation;
         }
         void setInActivation(void* newAc) {
@@ -47,6 +47,8 @@ namespace TommyDat {
 
         virtual void inference(void* lastLayerInput) = 0;
         virtual void backward(void* nextLayerInput,float learningRate) = 0;
+        virtual int getOutputSizeFlattened() const = 0;
+
     protected:
         Layer* nextLayer = nullptr;
         Layer* lastLayer = nullptr;

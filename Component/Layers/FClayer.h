@@ -11,6 +11,8 @@
 #include "../EnumActivationType.h"
 #include <cmath>
 #include <iostream>
+#include "MaxPoolingLayer.h"
+#include "ConvolutionLayer.h"
 
 namespace TommyDat {
     class FClayer : public Layer {
@@ -51,27 +53,40 @@ namespace TommyDat {
             BiasMatrix = new Matrix<float>(mat);
         }
 
+        int getOutputSizeFlattened() const override {
+            return _dense; // output is _dense
+        }
 
         void init() {
-            if (_isFirst) {
-                // Input layer — may not have weights, but still allocate bias for consistency
-                WeightMatrix = nullptr;
-                BiasMatrix = new Matrix<float>(1, 1, _dense, 0.0f);
-                return;
+            if (_isFirst) return; // input layer already defined
+
+            int inputSize = 0;
+
+            if (!lastLayer) {
+                throw std::runtime_error("FClayer::init() called with no previous layer");
             }
 
-            // Get previous layer’s dense size
-            FClayer* lastFcLayer = dynamic_cast<FClayer*>(lastLayer);
-            int prevDense = lastFcLayer ? lastFcLayer->getDense() : 0;
+            // Determine input size based on previous layer type
+            if (auto lastFc = dynamic_cast<FClayer*>(lastLayer)) {
+                inputSize = lastFc->getDense();  // last FC layer neurons
+            } else if (auto lastPool = dynamic_cast<MaxPoolingLayer*>(lastLayer)) {
+                inputSize = lastPool->getOutputSizeFlattened(); // flattened output
+            } else if (auto lastConv = dynamic_cast<ConvolutionLayer*>(lastLayer)) {
+                inputSize = lastConv->getOutputSizeFlattened(); // flattened output
+            } else {
+                throw std::runtime_error("Unsupported previous layer type in FClayer::init()");
+            }
 
-            // Allocate properly shaped matrices
-            WeightMatrix = new Matrix<float>(1, _dense, prevDense);
-            BiasMatrix   = new Matrix<float>(1, 1, _dense);
+            // Allocate weight and bias matrices
+            if (WeightMatrix) delete WeightMatrix;
+            if (BiasMatrix) delete BiasMatrix;
 
-            // He initialize weights
-            WeightMatrix->heInit(prevDense);
-            BiasMatrix->InitMatrixWithVal(1, 1, _dense, 0.0f);
+            // Correct shape: rows = neurons, cols = input size
+            WeightMatrix = new Matrix<float>(1, _dense, inputSize);
+            BiasMatrix = new Matrix<float>(1, 1, _dense);
         }
+
+
 
         // Destructor
         // ~FClayer() {
@@ -91,9 +106,9 @@ namespace TommyDat {
 
         auto tracebackableMaxpooling = static_cast<Matrix<Tracebackable<float>>*>(ptr_lastLayerInput);
         auto floatMaxPoolingOutput = toValueMatrix(*tracebackableMaxpooling);
-        if (floatMaxPoolingOutput.getLen() != _dense) {
-            throw std::runtime_error("_dense of this layer is not equal to max pooling output size");
-        }
+        // if (floatMaxPoolingOutput.getLen() != _dense) {
+        //     throw std::runtime_error("_dense of this layer is not equal to max pooling output size");
+        // }
         floatMaxPoolingOutput.reShape(1,1,_dense);
        // std::cout << "INPUT FIRST LAYER" << floatMaxPoolingOutput;
         nextLayer->inference(&floatMaxPoolingOutput);

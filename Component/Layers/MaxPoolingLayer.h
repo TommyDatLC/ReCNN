@@ -12,6 +12,8 @@ namespace TommyDat {
     public:
         int stride;
         int size;
+        int inputHeight = 0;
+        int inputWidth  = 0;
         MaxPoolingLayer(int stride,int size) {
             this->stride = stride;
             this->size = size;
@@ -32,6 +34,53 @@ namespace TommyDat {
         void setSize(int s) {
             size = s;
         }
+
+        //Input shape for easier image loads
+        int getInputHeight() const {
+            return inputHeight;
+        }
+
+        int getInputWidth() const {
+            return inputWidth;
+        }
+
+
+        int getChannels() const {
+            if (lastLayer) {
+                if (auto conv = dynamic_cast<ConvolutionLayer*>(lastLayer)) {
+                    return conv->getOutChannel();
+                } else if (auto pool = dynamic_cast<MaxPoolingLayer*>(lastLayer)) {
+                    return pool->getChannels();
+                }
+            }
+            return 1; // fallback
+        }
+
+        void setInputShape(int h, int w) {
+            inputHeight = h;
+            inputWidth = w;
+        }
+
+        int getOutputSizeFlattened() const override {
+            if (inputHeight == 0 || inputWidth == 0)
+                throw std::runtime_error("MaxPoolingLayer: input shape not set");
+
+            int H_out = inputHeight / stride; // integer division
+            int W_out = inputWidth / stride;
+
+            // Assuming channel count comes from lastLayer
+            int channels = 1;
+            if (lastLayer) {
+                if (auto conv = dynamic_cast<ConvolutionLayer*>(lastLayer)) {
+                    channels = conv->getOutChannel();
+                } else if (auto pool = dynamic_cast<MaxPoolingLayer*>(lastLayer)) {
+                    channels = pool->getChannels(); // add getter in MaxPoolingLayer
+                }
+            }
+
+            return channels * H_out * W_out;
+        }
+
         // Constructor for deserialization
        MaxPoolingLayer() : stride(1), size(2) {}
 
