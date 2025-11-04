@@ -166,59 +166,60 @@ vector<NeuralInput> ReadDataset(bool isTrain, bool useSmallImage) {
 //     return (float)correct / data.size();
 //         // ...
 // }
-float elvaluate(NeuralNetwork<NeuralInput>& net, vector<NeuralInput>& data) {
+float evaluate(NeuralNetwork<NeuralInput>& net, vector<NeuralInput>& data) {
     std::cout << "[DEBUG] Evaluate called, data size = " << data.size() << std::endl;
     if (data.empty()) {
         std::cerr << "[WARNING] Dataset is empty!" << std::endl;
         return 0.0f;
     }
-    if (data.empty()) return 0.0f;
 
     int correct = 0;
+    int confusion[2][2] = {{0, 0}, {0, 0}}; // confusion matrix [actual][predicted]
 
     for (size_t idx = 0; idx < data.size(); idx++) {
         try {
-            // Forward pass
             net.predict(&data[idx]);
-
-            // Get output
             void* rawOutput = net.getPredictResult();
-            if (!rawOutput) {
-                std::cerr << "Null output at sample " << idx << "\n";
-                continue;
-            }
+            if (!rawOutput) continue;
 
             Matrix<float>* outputMatrix = static_cast<Matrix<float>*>(rawOutput);
 
-            // Find predicted class (argmax)
             int predictedClass = 0;
             float maxProb = -std::numeric_limits<float>::infinity();
 
-            // Giả sử output có shape (1, 1, 2) cho 2 classes
+            // Giả sử output có shape (1, 1, 2)
             for (int i = 0; i < 2; i++) {
-                // Dùng method get() thay vì data()
                 float prob = outputMatrix->get(0, 0, i);
-
                 if (prob > maxProb) {
                     maxProb = prob;
                     predictedClass = i;
                 }
             }
 
-            // Check correctness
-            if (predictedClass == data[idx].lable) {
+            int actual = data[idx].lable;
+            confusion[actual][predictedClass]++;
+
+            if (predictedClass == actual)
                 correct++;
-            }
 
         } catch (const std::exception& e) {
-            std::cerr << "Error evaluating sample " << idx << ": "
-                      << e.what() << "\n";
+            std::cerr << "Error evaluating sample " << idx << ": " << e.what() << "\n";
             continue;
         }
     }
 
-    return static_cast<float>(correct) / data.size();
+    // Print confusion matrix
+    std::cout << "\nConfusion Matrix:\n";
+    std::cout << "           Predicted Cat   Predicted Dog\n";
+    std::cout << "Actual Cat      " << confusion[0][0] << "               " << confusion[0][1] << "\n";
+    std::cout << "Actual Dog      " << confusion[1][0] << "               " << confusion[1][1] << "\n";
+
+    float accuracy = static_cast<float>(correct) / data.size();
+    std::cout << "Accuracy: " << accuracy * 100.0f << "%\n";
+
+    return accuracy;
 }
+
 
 
 // // ============================================
@@ -291,11 +292,9 @@ int epochs = 10;
         cout << "[Epoch " << epoch + 1 << "] Loss = " << totalLoss << endl;
 
         // 🔹 Đánh giá sau mỗi epoch:
-        float acc = elvaluate(net, testData);
-        cout << "Validation Accuracy = " << acc * 100 << "%\n";
+        evaluate(net, testData);
     }
-    float acc = elvaluate(net, testData);
-    cout << "Test Accuracy = " << acc * 100 << "%\n";
+
 
 
 
