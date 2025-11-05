@@ -85,7 +85,7 @@ void TrainAndEval(NeuralNetwork<NeuralInput>* net,vector<NeuralInput>& trainingD
         std::string res[] = {"Cat","Dog" };
         Evaluate(net,testData);
 
-        ModelSerialize::saveNetwork(*net, "../Models/mymodel.json");
+        ModelSerialize::saveNetwork(*net, "../Models/mymodelNoConv.json");
 
 }
 
@@ -123,24 +123,24 @@ int main() {
     //
     // // ============ TEST ============
 
-        auto loadedNet = ModelSerialize::loadNetwork<NeuralInput>("../Models/mymodel.json");
+        //uto loadedNet = ModelSerialize::loadNetwork<NeuralInput>("../Models/mymodelNoConv.json");
         // loadedNet->learningRate = 0.001;
-        // NeuralNetwork<NeuralInput> net;
-        // net.learningRate = lr;
+        NeuralNetwork<NeuralInput> net;
+        net.learningRate = lr;
         // auto layer1 = ConvolutionLayer(3, 6, 3, 2);
         // auto layer2 = MaxPoolingLayer(2, 2);
-        // auto fc1 = FClayer(6 * 4 * 4, EnumActivationType::ReLU,true);
-        // auto fc2 = FClayer( 16, EnumActivationType::ReLU);
-        // auto output = FClayer(outputNeuron, EnumActivationType::softMax);
+        auto fc1 = FClayer(3 * 16  * 16, EnumActivationType::ReLU,true);
+        auto fc2 = FClayer( 16, EnumActivationType::ReLU);
+        auto output = FClayer(outputNeuron, EnumActivationType::softMax);
         // net.add(&layer1);
         // net.add(&layer2);
-        // net.add(&fc1);
-        // net.add(&fc2);
-        // net.add(&output);
-        // fc1.init();
-        // fc2.init();
-        // output.init();
-        Evaluate(loadedNet,testData);
+        net.add(&fc1);
+        net.add(&fc2);
+        net.add(&output);
+        fc1.init();
+        fc2.init();
+        output.init();
+        TrainAndEval(&net,trainingData,testData);
         // Matrix loss(1,1,2,0.f);
         // loss.set(0,0,1,-1);
 
