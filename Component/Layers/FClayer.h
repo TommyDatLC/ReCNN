@@ -224,9 +224,6 @@ namespace TommyDat {
                 // elementwise multiply dA_next * dAct
                 dZ = mulUnofficial<float, float>( *dA_next, dAct ); // returns new Matrix<float>*
 
-            } else {
-                // no activation or unsupported: assume dZ = dA_next
-                dZ = new Matrix<float>(*dA_next);
             }
 
             // --- 2) prepare previous activation (A_prev) ---
@@ -251,7 +248,7 @@ namespace TommyDat {
 
 
             // dB: sum dZ along rows (axis N) to get shape 1 x 1 x dense
-            Matrix<float>* dB = dZ->sumAlongAxis(AXIS_N); // returns new Matrix<float>*
+            Matrix<float>* dB = new Matrix<float>(*dZ); // returns new Matrix<float>*
 
             // scale updates by learning rate
             dW.apply([learningRate] __device__ (float x) {
@@ -283,7 +280,7 @@ namespace TommyDat {
 
             // propagate to last layer
            lastLayer->backward(&dA_prev, learningRate);
-          // std::cout << "A_prev" << *A_prev << "DZ" <<  *dZ << "LAYER BIAS CHANGE" << *dB << "LAYER WEIGHT CHANGE " << dW ;
+       //    std::cout << "dA_next" << *dA_next << "DZ" <<  *dZ << "LAYER BIAS CHANGE" << *dB << "LAYER WEIGHT CHANGE " << dW ;
 
             // cleanup temporaries
             delete dZ;

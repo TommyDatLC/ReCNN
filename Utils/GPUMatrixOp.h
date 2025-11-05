@@ -44,8 +44,8 @@ T** construct2Dfromflat(T* __restrict__ arr,int n,int m) {
 }
 
 template <typename T>
-__global__ void matrixMulTile(const T* __restrict__ A,
-                              const T* __restrict__ B,
+__global__ void matrixMulTile(const T*  A,
+                              const T*  B,
                               T* __restrict__ C,
                               int N, int K, int M) {
     constexpr int TILE = 16; // the complier will set this for you,not runtime
@@ -57,7 +57,7 @@ __global__ void matrixMulTile(const T* __restrict__ A,
     int row = blockIdx.y * TILE + ty; // global row in C
     int col = blockIdx.x * TILE + tx; // global col in C
 
-    T acc = static_cast<T>(0);
+    T acc = 0;
     int numPhases = (K + TILE - 1) / TILE;
     for (int ph = 0; ph < numPhases; ++ph) {
         int aCol = ph * TILE + tx; // column to read from A
@@ -67,14 +67,14 @@ __global__ void matrixMulTile(const T* __restrict__ A,
         if (row < N && aCol < K) {
             tileA[ty][tx] = A[row * K + aCol];
         } else {
-            tileA[ty][tx] = static_cast<T>(0);
+            tileA[ty][tx] = 0;
         }
 
         // load B[bRow, col] -> tileB[ty][tx]
         if (bRow < K && col < M) {
             tileB[ty][tx] = B[bRow * M + col];
         } else {
-            tileB[ty][tx] = static_cast<T>(0);
+            tileB[ty][tx] = 0;
         }
         __syncthreads();
 
@@ -306,7 +306,7 @@ __global__ void GPUheInit(T* __restrict__ A,int n,int in,ull seed) {
     T randn = curand_normal(&state);
 
     T stddev = sqrtf(2.f/ in);
-    A[id] = randn * stddev;
+    A[id] = randn * stddev; // no offset or
 }
 template <typename T>
 void CallGPUheInit(T* __restrict__ A,int n,int in,ull seed) {
