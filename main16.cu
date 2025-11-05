@@ -125,14 +125,13 @@ int main() {
             predictID = ptr_maxVal_index - ptr_firstElm;
             cout << "Predict res: " << *ptr_predRes;
 
-        cout << "Training completed, saving model\n";
-        ModelSerialize::saveNetwork(net, "../Models/mymodel.json");
+            cout << "Training completed, saving model\n";
+            ModelSerialize::saveNetwork(net, "../Models/mymodel.json");
 
-        // auto* reloadedNet = ModelSerialize::loadNetwork<float>("../Models/mymodel.json");
-        // std::cout << " Model loaded successfully\n";
+            // auto* reloadedNet = ModelSerialize::loadNetwork<float>("../Models/mymodel.json");
+            // std::cout << " Model loaded successfully\n";
 
-        // delete reloadedNet;
-        return 0;
-
-
+            // delete reloadedNet;
+            return 0;
+        }
 }
