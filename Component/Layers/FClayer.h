@@ -247,18 +247,8 @@ namespace TommyDat {
             // compute dW = dZ_t * A_prev  (returns Matrix by value)
             Matrix<float> dW = dZ_t * (*A_prev); // result is 1 x dense x lastDim
 
-            // If you want to average by number of examples (batch size), compute mExamples.
-            // Here we assume batch size = A_prev.m (or 1 if shaped like 1x1xN). We'll detect examples = A_prev->getLen() / lastDim?
-            // Because typical usage here is single-example, but to be safe try to infer "mExamples"
-            int mExamples = 1;
-            // attempt to infer: if A_prev has shape (1, n, m) and n==1 then m is number of features, not batch.
-            // Without explicit batching convention we'll leave as 1. If you batch externally, adapt here.
-            if (mExamples > 1) {
-                // divide dW by mExamples
-                dW.apply([mExamples] __device__ (float x) {
-                    return x / (float)mExamples;
-                });
-            }
+
+
 
             // dB: sum dZ along rows (axis N) to get shape 1 x 1 x dense
             Matrix<float>* dB = dZ->sumAlongAxis(AXIS_N); // returns new Matrix<float>*

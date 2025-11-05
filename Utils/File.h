@@ -30,7 +30,7 @@ bool hasImageExtension(const string& filename) {
 using namespace std;
 namespace fs = std::filesystem;
 
-vector<NeuralInput> ReadImageFolder(const string& folderPath, int label, bool isTest, bool doShuffle = true) {
+vector<NeuralInput> ReadImageFolder(const string& folderPath, int label, bool isTest, bool doShuffle = false) {
     vector<NeuralInput> res;
 
     if (!fs::exists(folderPath)) {

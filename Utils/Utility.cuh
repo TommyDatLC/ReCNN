@@ -98,25 +98,27 @@ struct RawMatrixOutput {
 #include <thread>
 #include <atomic>
 #include <iostream>
-
-std::atomic<float> globalLearningRate;
+bool StopLearning = false;
+std::atomic<int> stop;
 
 // Thread function to listen for new learning rate
-void monitorLearningRate() {
+void monitorStop() {
+    stop.store(1);
     while (true) {
-        float newRate;
-        std::cout << "\nEnter new learning rate (or -1 to stop): ";
-        if (!(std::cin >> newRate)) {
+        float t;
+        std::cout << "\nEnter -1 to stop): ";
+        if (!(std::cin >> t)) {
             std::cin.clear();
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
             continue;
         }
-        if (newRate < 0) {
+        if (t < 0) {
             std::cout << "Stopping learning rate monitor...\n";
+            StopLearning = true;
             break;
         }
-        globalLearningRate.store(newRate);
-        std::cout << "[INFO] Learning rate updated to " << newRate << "\n";
+        stop.store(t);
+
     }
 }
 
