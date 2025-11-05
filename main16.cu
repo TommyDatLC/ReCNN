@@ -51,7 +51,7 @@ int main() {
     //
     // cout << trainingData.size() << endl;
     //
-    // // ============ TEST ============
+    // // ============ LOAD THE MODEL FROM JSON ============
 
         auto loadedNet = ModelSerialize::loadNetwork<NeuralInput>("../Models/mymodel.json");
 
@@ -61,7 +61,7 @@ int main() {
             globalLearningRate.store(net.learningRate);
         std::thread lrThread(monitorLearningRate);
 
-
+        int outputNeuron = 2;
         auto layer1 = ConvolutionLayer(3, 6, 3, 2);
         auto layer2 = MaxPoolingLayer(2, 2);
         auto fc1 = FClayer(6 * 4 * 4, EnumActivationType::ReLU,true);
@@ -125,13 +125,23 @@ int main() {
             predictID = ptr_maxVal_index - ptr_firstElm;
             cout << "Predict res: " << *ptr_predRes;
 
-            cout << "Training completed, saving model\n";
-            ModelSerialize::saveNetwork(net, "../Models/mymodel.json");
+            int t = TB.get(0,testImage.lable,predictID);
+            TB.set(0,testImage.lable,predictID,t+1);
 
-            // auto* reloadedNet = ModelSerialize::loadNetwork<float>("../Models/mymodel.json");
-            // std::cout << " Model loaded successfully\n";
+        }
 
-            // delete reloadedNet;
+            cout << "truth table"<< TB;
+            int sum = 0;
+            for (int i = 0;i < outputNeuron;i++) {
+            sum += TB.get(0,i,i);
+        }
+            cout << "accuricy:" << sum / testData.size();
+    //
+    // // ============ SAVE MODEL ============
+
+            auto* reloadedNet = ModelSerialize::loadNetwork<float>("../Models/mymodel.json");
+            std::cout << " Model loaded successfully\n";
+
+            delete reloadedNet;
             return 0;
         }
-}

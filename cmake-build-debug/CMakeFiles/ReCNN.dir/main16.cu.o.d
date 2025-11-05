@@ -340,6 +340,11 @@ CMakeFiles/ReCNN.dir/main16.cu.o : /home/lystiger/CLionProjects/ReCNN/main16.cu 
     /usr/include/c++/12/pstl/glue_algorithm_defs.h \
     /usr/include/c++/12/pstl/execution_defs.h \
     /home/lystiger/CLionProjects/ReCNN/Component/Layers/ConvolutionLayer.h \
+    /usr/include/c++/12/memory_resource \
+    /usr/include/c++/12/cstddef \
+    /usr/include/c++/12/shared_mutex \
+    /usr/include/c++/12/bits/std_mutex.h \
+    /usr/include/c++/12/bits/uses_allocator_args.h \
     /home/lystiger/CLionProjects/ReCNN/Component/Layers/LayerBase.h \
     /home/lystiger/CLionProjects/ReCNN/Component/Layers/../Matrix.h \
     /usr/include/c++/12/cstring \
@@ -351,6 +356,34 @@ CMakeFiles/ReCNN.dir/main16.cu.o : /home/lystiger/CLionProjects/ReCNN/main16.cu 
     /home/lystiger/CLionProjects/ReCNN/Component/Layers/../../Utils/GPUMatrixOp.h \
     /home/lystiger/CLionProjects/ReCNN/Component/Layers/../../Utils/GPUmax.h \
     /home/lystiger/CLionProjects/ReCNN/Component/Layers/../../Utils/Utility.cuh \
+    /usr/include/c++/12/thread \
+    /usr/include/c++/12/stop_token \
+    /usr/include/c++/12/atomic \
+    /usr/include/c++/12/bits/atomic_base.h \
+    /usr/include/c++/12/bits/atomic_lockfree_defines.h \
+    /usr/include/c++/12/bits/atomic_wait.h \
+    /usr/include/c++/12/climits \
+    /usr/include/unistd.h \
+    /usr/include/x86_64-linux-gnu/bits/posix_opt.h \
+    /usr/include/x86_64-linux-gnu/bits/environments.h \
+    /usr/include/x86_64-linux-gnu/bits/confname.h \
+    /usr/include/x86_64-linux-gnu/bits/getopt_posix.h \
+    /usr/include/x86_64-linux-gnu/bits/getopt_core.h \
+    /usr/include/x86_64-linux-gnu/bits/unistd_ext.h \
+    /usr/include/linux/close_range.h \
+    /usr/include/syscall.h \
+    /usr/include/x86_64-linux-gnu/sys/syscall.h \
+    /usr/include/x86_64-linux-gnu/asm/unistd.h \
+    /usr/include/x86_64-linux-gnu/asm/unistd_64.h \
+    /usr/include/x86_64-linux-gnu/bits/syscall.h \
+    /usr/include/c++/12/bits/std_thread.h \
+    /usr/include/c++/12/semaphore \
+    /usr/include/c++/12/bits/semaphore_base.h \
+    /usr/include/c++/12/bits/atomic_timed_wait.h \
+    /usr/include/c++/12/bits/this_thread_sleep.h \
+    /usr/include/x86_64-linux-gnu/sys/time.h \
+    /usr/include/semaphore.h \
+    /usr/include/x86_64-linux-gnu/bits/semaphore.h \
     /home/lystiger/CLionProjects/ReCNN/Component/Layers/../../Utils/Sum.h \
     /home/lystiger/CLionProjects/ReCNN/Component/Layers/../../Utils/../Component/Tracebackable.h \
     /usr/include/curand_kernel.h \
@@ -389,33 +422,13 @@ CMakeFiles/ReCNN.dir/main16.cu.o : /home/lystiger/CLionProjects/ReCNN/main16.cu 
     /home/lystiger/CLionProjects/ReCNN/Component/../Utils/json.hpp \
     /usr/include/c++/12/cassert \
     /usr/include/c++/12/ciso646 \
-    /usr/include/c++/12/cstddef \
     /usr/include/c++/12/iterator \
     /usr/include/c++/12/bits/stream_iterator.h \
     /usr/include/c++/12/memory \
     /usr/include/c++/12/bits/stl_raw_storage_iter.h \
     /usr/include/c++/12/bits/shared_ptr_atomic.h \
-    /usr/include/c++/12/bits/atomic_base.h \
-    /usr/include/c++/12/bits/atomic_lockfree_defines.h \
-    /usr/include/c++/12/bits/atomic_wait.h \
-    /usr/include/c++/12/climits \
-    /usr/include/unistd.h \
-    /usr/include/x86_64-linux-gnu/bits/posix_opt.h \
-    /usr/include/x86_64-linux-gnu/bits/environments.h \
-    /usr/include/x86_64-linux-gnu/bits/confname.h \
-    /usr/include/x86_64-linux-gnu/bits/getopt_posix.h \
-    /usr/include/x86_64-linux-gnu/bits/getopt_core.h \
-    /usr/include/x86_64-linux-gnu/bits/unistd_ext.h \
-    /usr/include/linux/close_range.h \
-    /usr/include/syscall.h \
-    /usr/include/x86_64-linux-gnu/sys/syscall.h \
-    /usr/include/x86_64-linux-gnu/asm/unistd.h \
-    /usr/include/x86_64-linux-gnu/asm/unistd_64.h \
-    /usr/include/x86_64-linux-gnu/bits/syscall.h \
-    /usr/include/c++/12/bits/std_mutex.h \
     /usr/include/c++/12/backward/auto_ptr.h \
     /usr/include/c++/12/bits/ranges_uninitialized.h \
-    /usr/include/c++/12/bits/uses_allocator_args.h \
     /usr/include/c++/12/pstl/glue_memory_defs.h \
     /usr/include/c++/12/numeric \
     /usr/include/c++/12/bits/stl_numeric.h \
@@ -439,4 +452,9 @@ CMakeFiles/ReCNN.dir/main16.cu.o : /home/lystiger/CLionProjects/ReCNN/main16.cu 
     /usr/include/c++/12/bits/indirect_array.h \
     /home/lystiger/CLionProjects/ReCNN/Component/../Component/Matrix.h \
     /home/lystiger/CLionProjects/ReCNN/Component/TommyDatNeuralNet/NeuralNetwork.h \
-    /home/lystiger/CLionProjects/ReCNN/Component/TommyDatNeuralNet/../Layers/LayerBase.h
+    /home/lystiger/CLionProjects/ReCNN/Component/TommyDatNeuralNet/../Layers/LayerBase.h \
+    /home/lystiger/CLionProjects/ReCNN/Utils/File.h \
+    /usr/include/c++/12/random \
+    /usr/include/c++/12/bits/random.h \
+    /usr/include/x86_64-linux-gnu/c++/12/bits/opt_random.h \
+    /usr/include/c++/12/bits/random.tcc
