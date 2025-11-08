@@ -61,4 +61,4 @@ pooling, and the second one without a Convolution layer, Max Pooling layer, with
 the learning rate equal to 0.001 
 
 ## Model with Convolution: 
-
+<img width="300" height="300" alt="image" src="https://cdn.discordapp.com/attachments/860346551448371220/1436705635780657243/Screenshot_2025-11-08_201506.png?ex=691093e4&is=690f4264&hm=207c349a4bb60b9d4b72a3938fb4a263af5a36e157b022e4a609a48ff3f0cef3&" />
