@@ -127,15 +127,15 @@ Objective: Accelerate computation using GPU kernel
 4. GPUSoftMax.h
 
 # Source Code Tutorial
-Step 1: Clone the repository  
-Step 2: Install nvcc, g++, gcc, Clion, and CMake on Linux 
+- Step 1: Clone the repository  
+- Step 2: Install nvcc, g++, gcc, Clion, and CMake on Linux 
 (Linux required since it is not compatible with clang and gcc/g++ on Windows) 
 Run on Clion 
-Step 3: To read, training and testing use: 
+- Step 3: To read, training and testing use: 
 trainingData = ReadImage16x16(false); 
 testData = ReadImage16x16(true); 
-Step 4: Call TrainAndEval() to evaluate and train the model 
-Step 5: To save the model after trained 
+- Step 4: Call TrainAndEval() to evaluate and train the model 
+- Step 5: To save the model after trained 
 ModelSerialize::saveNetwork(*net,"../Models/mymodel.json"); 
-Step 6: To load the model for training 
+- Step 6: To load the model for training 
 ModelSerialize::loadNetwork<NeuralInput>("../Models/mymodel.json");
