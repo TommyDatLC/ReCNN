@@ -85,6 +85,6 @@ is still tiny, and the image hasn’t been enhanced yet.
 ## GitHub repository: 
 https://github.com/TommyDatLC/ReCNN.git 
 ## Dataset Download link: 
-+) Raw data: https://github.com/TommyDatLC/ReCNN/tree/layers/Dataset 
-+) Splitted data into 70% train and 30% test:  https://github.com/TommyDatLC/ReCNN/tree/layers/dataset_split
+- Raw data: https://github.com/TommyDatLC/ReCNN/tree/layers/Dataset 
+- Splitted data into 70% train and 30% test:  https://github.com/TommyDatLC/ReCNN/tree/layers/dataset_split
 
