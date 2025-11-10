@@ -60,26 +60,6 @@ We built 2 models with different architectures, one with a convolution layer, ma
 pooling, and the second one without a Convolution layer, Max Pooling layer, with 
 the learning rate equal to 0.001 
 
-## Model with Convolution: 
-This is the Architecture of the Network with Convolution layer:
-<img width="300" height="700" alt="image" src="https://cdn.discordapp.com/attachments/860346551448371220/1436705635780657243/Screenshot_2025-11-08_201506.png?ex=691093e4&is=690f4264&hm=207c349a4bb60b9d4b72a3938fb4a263af5a36e157b022e4a609a48ff3f0cef3&" />
-- Accuracy (with 16x16 images of Cat and Dog): 46%
-- Confusion matrix: 
-<img width="600" height="300" alt="image" src="https://cdn.discordapp.com/attachments/860346551448371220/1437091128556916816/Screenshot_2025-11-09_214648.png?ex=6911fae8&is=6910a968&hm=f897feae46d0bad8f354eab41c103983f8834f8b8479b1fc76846bec0a245539&" />
-
-## Model without Convolution: 
-This is the Architecture of the Network without Convolution layer:
-<img width="300" height="700" alt="image" src="https://cdn.discordapp.com/attachments/860346551448371220/1437094284351508543/Screenshot_2025-11-09_215741.png?ex=6911fdd9&is=6910ac59&hm=dc98966528686cd334ba7ff36e57a62bc81a4f2022425538736ca23ae3713cc4&" />
-- Accuracy (with 16x16 images of Cat and Dog): 55%
-- Confusion matrix:
-<img width="300" height="700" alt="image" src="https://media.discordapp.net/attachments/860346551448371220/1437094822077792286/Screenshot_2025-11-09_220135.png?ex=6911fe59&is=6910acd9&hm=9ea4510b780d7ccd2468173b2975af5a61d7c3c3535eecacffc149036269f7c8&=&format=webp&quality=lossless" />
-
-## Conclusion
-- We can see that in this case, the network with the convolution layer is overfitting. Because the convolution and maxpooling layer scale the image down to 4x4, too 
-small to train. 
-- The one without a convolution layer still has low accuracy because the image size 
-is still tiny, and the image hasn’t been enhanced yet.
-<img width="300" height="700" alt="image" src="https://media.discordapp.net/attachments/860346551448371220/1437095381757333564/Screenshot_2025-11-09_220349.png?ex=6911fede&is=6910ad5e&hm=5b3038d9cc748d16a6352bd447a0159b463e33c6e30846ffce3412ec88dafbd5&=&format=webp&quality=lossless" />
 
 # Sources
 ## GitHub repository: 
