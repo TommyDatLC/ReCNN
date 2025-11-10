@@ -14,31 +14,6 @@ Moreover, they support for CUDA acceleration (configurable in build system).
 - Educational Deep Dive: Complete transparency into CNN internals, 
 making every mathematical operation visible and understandable.
 
-# Input and Output descriptions
-## Input
-1. Raw RGB images of cats and dogs. 
-2. Image dimensions: 16x16 (small) or 400x400 (large) pixels, configurable.  
-3. Training dataset: Cat images (label: 0) and Dog images (label: 1). 
-4. Training dataset structure : <img width="300" height="300" alt="image" src="https://media.discordapp.net/attachments/860346551448371220/1436702149324181534/Screenshot_2025-11-08_200045.png?ex=691090a5&is=690f3f25&hm=78937e529c1ac941180b498fb1ff4a212ed673e2ae1390106599ea52c1bbcbb1&=&format=webp&quality=lossless" />
-5. Hyperparameters: learning rate, epochs, kernel sizes, and number of 
-channels. 
-6. Configuration options: activation functions and network architecture.
-
-## Output
-1. A trained binary classifier model (Cat vs Dog) 
-2. Predictions for test images: probability distribution [P(cat), P(dog)] 
-3. Classification decision: 0 (Cat) or 1 (Dog) based on highest probability 
-4. Training metrics: 
-+ Binary cross-entropy loss curves over iterations 
-+ Classification accuracy progression through epochs 
-+ Validation performance (accuracy, confusion matrix) 
-5. Performance benchmarks: 
-+ Training loss progression 
-+ Per-epoch accuracy on test set 
-6. Model checkpoints saved for future inference 
-+ Serialize model’s architecture, layers, biases, weights and other 
-hyperparameters into JSON file 
-+ Autoloaded and saved for maximum training
 
 # Obtained Outcomes Descriptions
 ## Complete CNN Architecture Implementation
