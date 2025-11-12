@@ -1,5 +1,6 @@
+<p align="center">
 <img width="620" height="127" alt="image" src="https://github.com/user-attachments/assets/73891fd3-db1a-4aca-91c0-1c216be243b7" />
-
+</p>
 # Introduction 
 Re::CNN is a complete from-scratch implementation of Convolutional Neural 
 Networks built entirely in C++/CUDA without using any high-level deep learning 
@@ -94,3 +95,8 @@ testData = ReadImage16x16(true);
 ModelSerialize::saveNetwork(*net,"../Models/mymodel.json"); 
 - Step 6: To load the model for training 
 ModelSerialize::loadNetwork<NeuralInput>("../Models/mymodel.json");
+
+# Training System Architecture
+<p align="center">
+<img width="1920" height="1080" alt="image" src="https://media.discordapp.net/attachments/860346551448371220/1438094034693525524/Screenshot_2025-11-12_161105.png?ex=6915a0f0&is=69144f70&hm=f5900a6db18e9471161563cd8c0a9e98ef2a169d0608519aea4451aae7d2d760&=&format=webp&quality=lossless" />
+</p>
