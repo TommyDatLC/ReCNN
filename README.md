@@ -1,7 +1,7 @@
+# Introduction 
 <p align="center">
 <img width="620" height="127" alt="image" src="https://github.com/user-attachments/assets/73891fd3-db1a-4aca-91c0-1c216be243b7" />
 </p>
-# Introduction 
 Re::CNN is a complete from-scratch implementation of Convolutional Neural 
 Networks built entirely in C++/CUDA without using any high-level deep learning 
 frameworks (TensorFlow, PyTorch, etc.). The project demonstrates: 
