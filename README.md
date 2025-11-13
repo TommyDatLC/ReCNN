@@ -98,7 +98,7 @@ Run on Clion
 trainingData = ReadImage16x16(false); 
 testData = ReadImage16x16(true);
 ```
-- Step 4: Call ```text TrainAndEval() ``` to evaluate and train the model 
+- Step 4: Call ```TrainAndEval() ``` to evaluate and train the model 
 - Step 5: To save the model after trained
 ```text
 ModelSerialize::saveNetwork(*net,"../Models/mymodel.json");
