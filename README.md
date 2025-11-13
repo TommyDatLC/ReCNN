@@ -85,7 +85,7 @@ $$
 ```
 # Source Code Tutorial
 - Step 1: Clone the repository  
-- Step 2: Install nvcc, g++, gcc, Clion, and CMake on Linux 
+- Install **nvcc**, **g++**, **gcc**, **CLion**, and **CMake** on Linux.
 (Linux required since it is not compatible with clang and gcc/g++ on Windows) 
 Run on Clion 
 - Step 3: To read, training and testing use:
