@@ -1,3 +1,0 @@
-/home/lystiger/CLionProjects/ReCNN/cmake-build-debug/CMakeFiles/ReCNN.dir
-/home/lystiger/CLionProjects/ReCNN/cmake-build-debug/CMakeFiles/edit_cache.dir
-/home/lystiger/CLionProjects/ReCNN/cmake-build-debug/CMakeFiles/rebuild_cache.dir
