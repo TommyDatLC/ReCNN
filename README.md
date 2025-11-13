@@ -49,7 +49,11 @@ the learning rate equal to 0.001
 ## Mathematical Foundation and Design 
 - Objective: Understand CNN mathematics and design the architecture
 - Activities:
-  - Study convolution operation: output[i,j] = Σ Σ input[i+m,j+n] * kernel[m,n]
+  - Study convolution operation:
+  - $$
+\text{output}[i, j] = \sum_m \sum_n \text{input}[i + m, j + n] \cdot \text{kernel}[m, n]
+$$
+
   - Understand gradient flow through conv layers using chain rule
   - Design class hierarchy (LayerBase → ConvolutionLayer, FCLayer, MaxPoolingLayer)
   - Plan data structures for Matrix and gradients (Matrix class)
@@ -77,23 +81,30 @@ Objective: Save and load trained models
 
 ## Optimization and Performance 
 Objective: Accelerate computation using GPU kernel 
-- Main key files:  
+- Main key files:
+``` text
 1. GPUMatrixOp.h  
 2. GPUMax.h 
 3. GPUPrefixSum.h 
 4. GPUSoftMax.h
-
+```
 # Source Code Tutorial
 - Step 1: Clone the repository  
 - Step 2: Install nvcc, g++, gcc, Clion, and CMake on Linux 
 (Linux required since it is not compatible with clang and gcc/g++ on Windows) 
 Run on Clion 
-- Step 3: To read, training and testing use: 
+- Step 3: To read, training and testing use:
+```text
 trainingData = ReadImage16x16(false); 
-testData = ReadImage16x16(true); 
-- Step 4: Call TrainAndEval() to evaluate and train the model 
-- Step 5: To save the model after trained 
-ModelSerialize::saveNetwork(*net,"../Models/mymodel.json"); 
-- Step 6: To load the model for training 
+testData = ReadImage16x16(true);
+```
+- Step 4: Call ```text TrainAndEval() ``` to evaluate and train the model 
+- Step 5: To save the model after trained
+```text
+ModelSerialize::saveNetwork(*net,"../Models/mymodel.json");
+```
+- Step 6: To load the model for training
+```text
 ModelSerialize::loadNetwork<NeuralInput>("../Models/mymodel.json");
+```
 
