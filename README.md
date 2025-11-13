@@ -14,7 +14,10 @@ components: Layers, Base Classes, Neural Network, Activation Functions.
 Moreover, they support for CUDA acceleration (configurable in build system). 
 - Educational Deep Dive: Complete transparency into CNN internals, 
 making every mathematical operation visible and understandable.
-
+# Training System Architecture
+<p align="center">
+<img width="1177" height="660" alt="image" src="https://github.com/user-attachments/assets/23059dd6-7d8c-4eac-9434-45a92eba0e6f" />
+</p>
 
 # Obtained Outcomes Descriptions
 ## Complete CNN Architecture Implementation
@@ -94,7 +97,3 @@ ModelSerialize::saveNetwork(*net,"../Models/mymodel.json");
 - Step 6: To load the model for training 
 ModelSerialize::loadNetwork<NeuralInput>("../Models/mymodel.json");
 
-# Training System Architecture
-<p align="center">
-<img width="1920" height="1080" alt="image" src="https://media.discordapp.net/attachments/860346551448371220/1438094034693525524/Screenshot_2025-11-12_161105.png?ex=6915a0f0&is=69144f70&hm=f5900a6db18e9471161563cd8c0a9e98ef2a169d0608519aea4451aae7d2d760&=&format=webp&quality=lossless" />
-</p>
