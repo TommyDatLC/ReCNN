@@ -14,13 +14,13 @@ components: Layers, Base Classes, Neural Network, Activation Functions.
 Moreover, they support for CUDA acceleration (configurable in build system). 
 - Educational Deep Dive: Complete transparency into CNN internals, 
 making every mathematical operation visible and understandable.
-# Training System Architecture
+
+# Obtained Outcomes Descriptions
+## Complete CNN Architecture Implementation
 <p align="center">
 <img width="1177" height="660" alt="image" src="https://github.com/user-attachments/assets/23059dd6-7d8c-4eac-9434-45a92eba0e6f" />
 </p>
 
-# Obtained Outcomes Descriptions
-## Complete CNN Architecture Implementation
 1. ConvolutionLayer with configurable kernel size, stride, channels 
 2.  MaxPoolingLayer for spatial dimension reduction 
 3.  Fully Connected (FCLayer) for classification 
