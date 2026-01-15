@@ -103,5 +103,5 @@ ModelSerialize::saveNetwork(*net,"../Models/mymodel.json");
 ModelSerialize::loadNetwork<NeuralInput>("../Models/mymodel.json");
 ```
 # Issue
-- The weight initialization is not correct yet, so the neural network might increase a lot of loss while training 
+- The weight initialization is not correct yet, so the convolution layer might increase a lot of loss while training 
 - Memory leak 
