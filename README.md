@@ -104,4 +104,4 @@ ModelSerialize::loadNetwork<NeuralInput>("../Models/mymodel.json");
 ```
 # Issue
 - The weight initialization is not correct yet, so the neural network might increase a lot of loss while training 
-- Memory Leak 
+- Memory leak 
